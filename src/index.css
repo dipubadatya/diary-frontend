@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;550;600;700;800&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Pacifico&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: '"Plus Jakarta Sans"', 'Inter', system-ui, -apple-system, sans-serif;
+  --color-brand: #FE5621;
+  --color-brand-light: #FFF0EC;
+  --color-bg-light: #FCFCFC;
+  --color-bg-dark: #0A0A0A;
+  --color-card-dark: #141414;
+  --color-border-light: #F3F4F6;
+  --color-border-dark: #262626;
+  --shadow-app: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+  --shadow-orange: 0 10px 25px -5px rgba(254, 86, 33, 0.4);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 transition-colors duration-200 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full dark:bg-slate-800;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-slate-700;
+  }
+}
+
+.dark body {
+  @apply bg-slate-950 text-slate-50;
+}
+
+/* Glassmorphism utility classes */
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-slate-200/50 dark:bg-slate-900/70 dark:border-slate-800/50;
+}
+
+.glass-card {
+  @apply bg-white/50 backdrop-blur-md border border-slate-200/30 shadow-sm dark:bg-slate-900/50 dark:border-slate-800/30;
+}
+
+/* Circular cropper for profile image modal */
+.profile-edit-modal .cropper-view-box,
+.profile-edit-modal .cropper-face {
+  border-radius: 50%;
+}
+
+/* Placeholder styling for custom contenteditable writing canvas */
+[contenteditable]:empty:before {
+  content: attr(data-placeholder);
+  color: #cbd5e1;
+  cursor: text;
+}
+
+.dark [contenteditable]:empty:before {
+  color: #334155;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+/* Custom premium Blockquote style for editorial look */
+blockquote {
+  border-left: 4px solid #FE5621 !important;
+  padding-left: 1.5rem !important;
+  font-style: italic !important;
+  color: #4b5563 !important;
+}
+
+.dark blockquote {
+  color: #9ca3af !important;
+}
