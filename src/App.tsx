@@ -18,6 +18,7 @@ import { Dashboard } from './pages/Dashboard';
 import { AccountSettings } from './pages/AccountSettings';
 import { Notifications } from './pages/Notifications';
 import { Chat } from './pages/Chat';
+import { Search } from './pages/Search';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -103,6 +104,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <Chat />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/search"
+                    element={
+                      <ProtectedRoute>
+                        <Search />
                       </ProtectedRoute>
                     }
                   />
