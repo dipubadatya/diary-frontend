@@ -7,8 +7,8 @@ import * as z from 'zod';
 import { Link } from 'react-router-dom';
 import { Loader2, Mail, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../services/api';
-import DiaryLogo from "../components/DiaryLogo";
+import api from '../../services/api';
+import DiaryLogo from "../../components/DiaryLogo";
 
 
 const forgotPasswordSchema = z.object({

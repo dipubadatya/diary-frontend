@@ -7,8 +7,8 @@ import React, {
   useCallback,
 } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useSocket } from '../contexts/SocketContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useSocket } from '../../contexts/SocketContext';
 import {
   Send,
   Check,
@@ -22,7 +22,7 @@ import {
   RefreshCw,
   Loader2,
 } from 'lucide-react';
-import api from '../services/api';
+import api from '../../services/api';
 import moment from 'moment';
 
 // ─────────────────────────────────────────────────────────────────────────────

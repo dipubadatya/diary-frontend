@@ -2,8 +2,8 @@
 // src/pages/Profile.tsx
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 import Cropper from 'cropperjs';
 import 'cropperjs/dist/cropper.css';
 import {

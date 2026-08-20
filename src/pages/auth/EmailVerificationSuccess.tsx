@@ -4,7 +4,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
-import DiaryLogo from '../components/DiaryLogo';
+import DiaryLogo from '../../components/DiaryLogo';
 
 export const VerificationSuccess: React.FC = () => {
   return (

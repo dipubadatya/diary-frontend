@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 import {
   ArrowLeft, Loader2, User, Lock, Shield,
   Trash2, LogOut, Check, Eye, EyeOff,

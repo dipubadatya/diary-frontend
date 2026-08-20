@@ -266,9 +266,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
-import DiaryLogo from '../components/DiaryLogo'
+import api from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
+import DiaryLogo from '../../components/DiaryLogo'
 
 const signUpSchema = z.object({
   name: z.string().min(2, 'Please enter your name'),

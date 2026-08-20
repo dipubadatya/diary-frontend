@@ -1,24 +1,23 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
-import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
 import { SocketProvider } from './contexts/SocketContext';
 import { Landing } from './pages/Landing';
-import { Login } from './pages/Login';
-import { SignUp } from './pages/SignUp';
-import { ForgotPassword } from './pages/ForgotPassword';
-import { ResetPassword } from './pages/ResetPassword';
-import { VerifyEmail } from './pages/VerifyEmail';
-import { VerificationSuccess } from './pages/VerificationSuccess';
-import { Stories } from './pages/Stories';
-import { StoryRead } from './pages/StoryRead';
-import { Write } from './pages/Write';
-import { Dashboard } from './pages/Dashboard';
-import { AccountSettings } from './pages/AccountSettings';
-import { Notifications } from './pages/Notifications';
-import { Chat } from './pages/Chat';
-import { Search } from './pages/Search';
+import { Login } from './pages/auth/Login';
+import { SignUp } from './pages/auth/SignUp';
+import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { ResetPassword } from './pages/auth/ResetPassword';
+import { VerifyEmail } from './pages/auth/VerifyEmail';
+import { VerificationSuccess } from './pages/auth/EmailVerificationSuccess';
+import { Stories } from './pages/stories/Stories';
+import { StoryRead } from './pages/stories/StoryRead';
+import { Write } from './pages/stories/WriteStory';
+import { Profile } from './pages/profile/Profile';
+import { AccountSettings } from './pages/profile/AccountSettings';
+import { Notifications } from './pages/notifications/Notifications';
+import { Chat } from './pages/chat/Chat';
+import { Search } from './pages/search/Search';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -34,7 +33,7 @@ const queryClient = new QueryClient({
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      {/* <ThemeProvider> */}
         <AuthProvider>
           <SocketProvider>
             <Toaster
@@ -62,9 +61,9 @@ function App() {
                   <Route
                     path="/stories/:id"
                     element={
-                      <ProtectedRoute>
+                    
                         <StoryRead />
-                      </ProtectedRoute>
+                   
                     }
                   />
                   <Route
@@ -79,7 +78,7 @@ function App() {
                     path="/profile/:username"
                     element={
                       <ProtectedRoute>
-                        <Dashboard />
+                        <Profile />
                       </ProtectedRoute>
                     }
                   />
@@ -136,7 +135,7 @@ function App() {
             </ErrorBoundary>
           </SocketProvider>
         </AuthProvider>
-      </ThemeProvider>
+      {/* </ThemeProvider> */}
     </QueryClientProvider>
   );
 }

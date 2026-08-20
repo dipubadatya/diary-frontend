@@ -8,13 +8,13 @@ import React, {
   useRef,
 } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import { useSocket } from "../contexts/SocketContext";
-import api from "../services/api";
+import { useAuth } from "../../contexts/AuthContext";
+import { useSocket } from "../../contexts/SocketContext";
+import api from "../../services/api";
 import toast from "react-hot-toast";
 import moment from "moment";
-import { ErrorCard } from "../components/ErrorCard";
-import DiaryLogo from "../components/DiaryLogo";
+import { ErrorCard } from "../../components/ErrorCard";
+import DiaryLogo from "../../components/DiaryLogo";
 
 /* ══════════════════════════════════════
    TYPES

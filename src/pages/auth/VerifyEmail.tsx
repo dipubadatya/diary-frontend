@@ -3,8 +3,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, ShieldAlert, ShieldCheck, ArrowLeft } from 'lucide-react';
-import api from '../services/api';
-import DiaryLogo from '../components/DiaryLogo';
+import api from '../../services/api';
+import DiaryLogo from '../../components/DiaryLogo';
 
 export const VerifyEmail: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -125,7 +125,7 @@ export const VerifyEmail: React.FC = () => {
                       <span className="italic font-normal">successful.</span>
                     </h1>
                     <p className="text-sm md:text-base text-white/90 max-w-md mx-auto lg:mx-0 mb-6 md:mb-8 leading-relaxed">
-                      Everything is set. We are redirecting you to your dashboard now.
+                      Everything is set. We are redirecting you to your Profile now.
                     </p>
                   </>
                 )}

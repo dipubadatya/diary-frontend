@@ -6,11 +6,11 @@ import * as z from 'zod';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Loader2, ArrowLeft, Check, X, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '../services/api';
-import DiaryLogo from '../components/DiaryLogo';
+import api from '../../services/api';
+import DiaryLogo from '../../components/DiaryLogo';
 
 const resetPasswordSchema = z.object({
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string().min(1, 'Please confirm your password'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Your passwords don't match",
@@ -45,7 +45,7 @@ export const ResetPassword: React.FC = () => {
 
   /* Password requirement checks */
   const checks = {
-    length: watchPassword.length >= 6,
+    length: watchPassword.length >= 8,
     hasLetter: /[a-zA-Z]/.test(watchPassword),
     hasNumber: /\d/.test(watchPassword),
     matches: watchPassword.length > 0 && watchPassword === watchConfirmPassword,
@@ -245,7 +245,7 @@ export const ResetPassword: React.FC = () => {
                                 autoFocus
                                 autoComplete="new-password"
                                 {...register('password')}
-                                placeholder="At least 6 characters"
+                                placeholder="At least 8 characters"
                                 className={`w-full bg-stone-50 border-2 rounded-2xl px-5 py-3 pr-12 text-sm text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none transition-all ${
                                   errors.password
                                     ? 'border-red-300 focus:border-red-500'
@@ -341,7 +341,7 @@ export const ResetPassword: React.FC = () => {
                               <p className="text-[10px] font-bold tracking-widest uppercase text-sky-700 mb-2">
                                 Your password should
                               </p>
-                              <RequirementRow met={checks.length} label="Be at least 6 characters" />
+                              <RequirementRow met={checks.length} label="Be at least 8 characters" />
                               <RequirementRow met={checks.hasLetter} label="Include a letter" />
                               <RequirementRow met={checks.hasNumber} label="Include a number (recommended)" />
                               <RequirementRow met={checks.matches} label="Match in both fields" />
