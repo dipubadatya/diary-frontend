@@ -287,6 +287,34 @@ export const SignUp: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [apiError, setApiError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
+
+  const handleResend = async () => {
+    if (!unverifiedEmail) return;
+    try {
+      setResending(true);
+      setResendMessage(null);
+      const res = await api.post("/auth/resend-verification", {
+        email: unverifiedEmail,
+      });
+      setResendMessage({ type: 'success', text: res.data.message || "Verification link sent." });
+      setCooldown(60);
+    } catch (err: any) {
+      setResendMessage({ type: 'error', text: err.message || "Unable to send link at this time." });
+    } finally {
+      setResending(false);
+    }
+  };
 
   useEffect(() => {
     const src = 'https://accounts.google.com/gsi/client';
@@ -358,11 +386,21 @@ export const SignUp: React.FC = () => {
     try {
       setIsSubmitting(true);
       setApiError(null);
-      const res = await api.post('/auth/signup', data);
-      toast.success(res.data.message || 'Welcome to Diary. Let\'s get started.');
-      navigate('/login');
+      setUnverifiedEmail(null);
+      await api.post('/auth/signup', data);
+      
+      // Store the email in sessionStorage to persist on page reloads
+      sessionStorage.setItem('pending_verification_email', data.email);
+      
+      // Redirect to Verify Email page with state
+      navigate('/verify-email', { state: { email: data.email } });
     } catch (err: any) {
-      setApiError(err.message || 'We couldn\'t create your account right now.');
+      if (err.message && err.message.includes("not verified")) {
+        setUnverifiedEmail(data.email);
+        setApiError(null);
+      } else {
+        setApiError(err.message || 'We couldn\'t create your account right now.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -483,6 +521,54 @@ export const SignUp: React.FC = () => {
                       <p className="text-[12px] text-red-600 font-medium leading-relaxed">
                         {apiError}
                       </p>
+                    </div>
+                  )}
+
+                  {/* Persistent Verification Warning Section */}
+                  {unverifiedEmail && (
+                    <div className="mb-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl text-left">
+                      <div className="flex items-start gap-2.5">
+                        <svg className="w-4.5 h-4.5 text-amber-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                          <h4 className="text-[11px] font-bold text-amber-900 uppercase tracking-widest mb-1">
+                            Verification Required
+                          </h4>
+                          <p className="text-xs text-amber-800 leading-relaxed font-medium mb-3">
+                            This email is registered but not verified. We sent a verification link to <strong className="break-all">{unverifiedEmail}</strong>. Please check your inbox to verify your email.
+                          </p>
+                          
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={handleResend}
+                              disabled={resending || cooldown > 0}
+                              className="text-[11px] font-bold text-sky-600 hover:text-sky-800 flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                            >
+                              {resending ? (
+                                <>
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                  Resending...
+                                </>
+                              ) : cooldown > 0 ? (
+                                `Resend in ${cooldown}s`
+                              ) : (
+                                "Resend Verification Email"
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Status message */}
+                          {resendMessage && (
+                            <p className={`text-[11px] mt-2 font-bold ${
+                              resendMessage.type === 'success' ? 'text-emerald-600' : 'text-red-650'
+                            }`}>
+                              {resendMessage.text}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
 
