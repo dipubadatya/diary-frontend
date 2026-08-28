@@ -1,734 +1,818 @@
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  User,
+  AtSign,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  X,
+  ArrowRight,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import api from "../../services/api";
+import { useAuth } from "../../contexts/AuthContext";
+import DiaryLogo from "../../components/DiaryLogo";
 
-// import React, { useState, useEffect } from 'react';
-// import { useForm } from 'react-hook-form';
-// import { zodResolver } from '@hookform/resolvers/zod';
-// import * as z from 'zod';
-// import { Link, useNavigate } from 'react-router-dom';
-// import toast from 'react-hot-toast';
-// import { Loader2 } from 'lucide-react';
-// import api from '../services/api';
-// import { useAuth } from '../contexts/AuthContext';
-
-// const signUpSchema = z.object({
-//   name: z.string().min(2, 'Please enter your name'),
-//   username: z.string().min(3, 'Username must be at least 3 characters').regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores, please'),
-//   email: z.string().email('Please enter a valid email address'),
-//   password: z.string().min(6, 'Password must be at least 6 characters'),
-// });
-
-// type SignUpFormData = z.infer<typeof signUpSchema>;
-
-// export const SignUp: React.FC = () => {
-//   const navigate = useNavigate();
-//   const { login } = useAuth();
-//   const [isSubmitting, setIsSubmitting] = useState(false);
-
-//   useEffect(() => {
-//     const src = 'https://accounts.google.com/gsi/client';
-//     const handleScriptLoad = () => {
-//       if ((window as any).google) {
-//         (window as any).google.accounts.id.initialize({
-//           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID ,
-//           callback: async (response: any) => {
-//             if (response && response.credential) {
-//               setIsSubmitting(true);
-//               try {
-//                 const res = await api.post('/auth/google', { idToken: response.credential });
-//                 if (res.data.success) {
-//                   login(res.data.user);
-//                   toast.success(res.data.message || 'Welcome back!');
-//                   navigate('/stories');
-//                 }
-//               } catch (err: any) {
-//                 toast.error(err.message || 'Google login failed.');
-//               } finally {
-//                 setIsSubmitting(false);
-//               }
-//             }
-//           }
-//         });
-
-//         (window as any).google.accounts.id.renderButton(
-//           document.getElementById('google-signin-btn'),
-//           {
-//             theme: 'outline',
-//             size: 'large',
-//             shape: 'pill',
-//             text: 'continue_with',
-//             width: 320
-//           }
-//         );
-//       }
-//     };
-
-//     const existingScript = document.querySelector(`script[src="${src}"]`);
-//     if (!existingScript) {
-//       const script = document.createElement('script');
-//       script.src = src;
-//       script.async = true;
-//       script.defer = true;
-//       script.onload = handleScriptLoad;
-//       document.body.appendChild(script);
-//     } else {
-//       handleScriptLoad();
-//     }
-//   }, []);
-
-//   const {
-//     register,
-//     handleSubmit,
-//     formState: { errors },
-//   } = useForm<SignUpFormData>({
-//     resolver: zodResolver(signUpSchema),
-//   });
-
-//   const onSubmit = async (data: SignUpFormData) => {
-//     try {
-//       setIsSubmitting(true);
-//       const res = await api.post('/auth/signup', data);
-//       toast.success(res.data.message || 'Welcome to Diary. Let’s get started.');
-//       navigate('/login');
-//     } catch (err: any) {
-//       toast.error(err.message || 'We couldn’t create your account right now. Please try again.');
-//     } finally {
-//       setIsSubmitting(false);
-//     }
-//   };
-
-//   return (
-//     <div className="min-h-screen relative flex flex-col items-center justify-center bg-[#FDFCF8] text-[#1A1A1A] font-sans overflow-x-hidden selection:bg-blue-100 selection:text-blue-900 pt-20 pb-40 lg:py-0">
-
-//       {/* Delicate Top Nav */}
-//       <header className="absolute top-0 w-full p-6 flex justify-between items-center z-20">
-//         <Link
-//           to="/"
-//           className="text-sm text-[#8B8985] hover:text-[#1A1A1A] transition-colors"
-//         >
-//           Return home
-//         </Link>
-//       </header>
-
-//       {/* Main Centered Content */}
-//       <main className="w-full max-w-sm px-6 z-20 flex flex-col items-center animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
-
-//         {/* Editorial Heading */}
-//         <h1 className="text-4xl md:text-5xl font-serif text-center mb-3 text-[#1A1A1A] tracking-tight leading-tight">
-//           Join Diary.
-//         </h1>
-
-//         <p className="text-center text-[15px] text-[#8B8985] mb-10 leading-relaxed">
-//           A quiet space to write, reflect, and share.
-//         </p>
-
-//         {/* Minimalist Form */}
-//         <form className="w-full space-y-3" onSubmit={handleSubmit(onSubmit)}>
-
-//           <div className="relative">
-//             <input
-//               id="name"
-//               type="text"
-//               {...register('name')}
-//               className={`w-full bg-white border rounded-full px-6 py-3.5 text-center text-[15px] placeholder:text-[#A19F9A] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] focus:outline-none focus:ring-2 focus:ring-[#4A88FF]/20 transition-all ${errors.name ? 'border-red-300 focus:border-red-400' : 'border-[#EAE7E0] hover:border-[#D1CEC6] focus:border-[#4A88FF]'
-//                 }`}
-//               placeholder="Your full name"
-//             />
-//             {errors.name && (
-//               <p className="text-[13px] text-red-500 text-center mt-1.5">{errors.name.message}</p>
-//             )}
-//           </div>
-
-//           <div className="relative">
-//             <input
-//               id="username"
-//               type="text"
-//               {...register('username')}
-//               className={`w-full bg-white border rounded-full px-6 py-3.5 text-center text-[15px] placeholder:text-[#A19F9A] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] focus:outline-none focus:ring-2 focus:ring-[#4A88FF]/20 transition-all ${errors.username ? 'border-red-300 focus:border-red-400' : 'border-[#EAE7E0] hover:border-[#D1CEC6] focus:border-[#4A88FF]'
-//                 }`}
-//               placeholder="Choose a username (e.g., @johndoe)"
-//             />
-//             {errors.username && (
-//               <p className="text-[13px] text-red-500 text-center mt-1.5">{errors.username.message}</p>
-//             )}
-//           </div>
-
-//           <div className="relative">
-//             <input
-//               id="email"
-//               type="email"
-//               autoComplete="email"
-//               {...register('email')}
-//               className={`w-full bg-white border rounded-full px-6 py-3.5 text-center text-[15px] placeholder:text-[#A19F9A] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] focus:outline-none focus:ring-2 focus:ring-[#4A88FF]/20 transition-all ${errors.email ? 'border-red-300 focus:border-red-400' : 'border-[#EAE7E0] hover:border-[#D1CEC6] focus:border-[#4A88FF]'
-//                 }`}
-//               placeholder="Email address"
-//             />
-//             {errors.email && (
-//               <p className="text-[13px] text-red-500 text-center mt-1.5">{errors.email.message}</p>
-//             )}
-//           </div>
-
-//           <div className="relative">
-//             <input
-//               id="password"
-//               type="password"
-//               autoComplete="new-password"
-//               {...register('password')}
-//               className={`w-full bg-white border rounded-full px-6 py-3.5 text-center text-[15px] placeholder:text-[#A19F9A] shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] focus:outline-none focus:ring-2 focus:ring-[#4A88FF]/20 transition-all ${errors.password ? 'border-red-300 focus:border-red-400' : 'border-[#EAE7E0] hover:border-[#D1CEC6] focus:border-[#4A88FF]'
-//                 }`}
-//               placeholder="Create a password"
-//             />
-//             {errors.password && (
-//               <p className="text-[13px] text-red-500 text-center mt-1.5">{errors.password.message}</p>
-//             )}
-//           </div>
-
-//           <div className="pt-4">
-//             <button
-//               type="submit"
-//               disabled={isSubmitting}
-//               className="w-full flex justify-center items-center py-3.5 px-6 rounded-full text-[15px] font-medium text-white bg-[#4A88FF] hover:bg-[#3A78EF] shadow-md shadow-[#4A88FF]/20 focus:outline-none focus:ring-4 focus:ring-[#4A88FF]/20 disabled:opacity-50 transition-all"
-//             >
-//               {isSubmitting ? (
-//                 <Loader2 className="w-5 h-5 animate-spin" />
-//               ) : (
-//                 'Begin writing'
-//               )}
-//             </button>
-//           </div>
-//         </form>
-
-//         {/* Divider */}
-//         <div className="w-full flex items-center justify-center gap-3 my-5">
-//           <div className="h-[1px] flex-1 bg-[#EAE7E0]"></div>
-//           <span className="text-[12px] text-[#8B8985] uppercase tracking-wider font-medium select-none">or</span>
-//           <div className="h-[1px] flex-1 bg-[#EAE7E0]"></div>
-//         </div>
-
-//         {/* Google Authentication Button */}
-//         <div className="w-full flex justify-center py-1">
-//           <div id="google-signin-btn" className="w-full flex justify-center"></div>
-//         </div>
-
-//         {/* Delicate Footer Links */}
-//         <div className="mt-12 flex flex-col items-center text-[13px] text-[#8B8985] gap-4">
-//           <p className="font-serif italic">handcrafted for writers</p>
-//           <div className="flex gap-2">
-//             <span>Already part of the community?</span>
-//             <Link to="/login" className="text-[#1A1A1A] hover:text-[#4A88FF] font-medium transition-colors">
-//               Sign in
-//             </Link>
-//           </div>
-//         </div>
-//       </main>
-
-//       {/* Bottom Nature Graphic */}
-//       <div className="absolute bottom-0 left-0 w-full z-10 pointer-events-none">
-//         <svg viewBox="0 0 1440 280" className="w-full h-auto block" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-//           {/* Back layer grass */}
-//           <path fill="#2D5A27" d="M0,280 L0,150 C120,180 240,120 360,130 C480,140 600,210 720,200 C840,190 960,100 1080,110 C1200,120 1320,200 1440,180 L1440,280 Z" opacity="0.6" />
-//           {/* Mid layer grass */}
-//           <path fill="#397332" d="M0,280 L0,200 C150,180 300,240 450,220 C600,200 750,140 900,160 C1050,180 1200,250 1440,220 L1440,280 Z" opacity="0.8" />
-//           {/* Foreground layer grass */}
-//           <path fill="#1F421A" d="M0,280 L0,240 C200,270 400,210 600,230 C800,250 1000,280 1200,260 C1300,250 1370,240 1440,245 L1440,280 Z" />
-
-//           {/* Stylized Sunflowers */}
-//           <g transform="translate(150, 180)">
-//             <path d="M0,0 Q-10,-40 5,-80" stroke="#397332" strokeWidth="4" fill="none" />
-//             <circle cx="5" cy="-80" r="12" fill="#EAB308" />
-//             <circle cx="5" cy="-80" r="6" fill="#422006" />
-//           </g>
-//           <g transform="translate(450, 150)">
-//             <path d="M0,0 Q10,-50 -5,-90" stroke="#2D5A27" strokeWidth="4" fill="none" />
-//             <circle cx="-5" cy="-90" r="14" fill="#EAB308" />
-//             <circle cx="-5" cy="-90" r="7" fill="#422006" />
-//           </g>
-//           <g transform="translate(850, 190)">
-//             <path d="M0,0 Q-15,-30 0,-70" stroke="#397332" strokeWidth="4" fill="none" />
-//             <circle cx="0" cy="-70" r="10" fill="#EAB308" />
-//             <circle cx="0" cy="-70" r="5" fill="#422006" />
-//           </g>
-//           <g transform="translate(1250, 170)">
-//             <path d="M0,0 Q20,-40 10,-85" stroke="#2D5A27" strokeWidth="4" fill="none" />
-//             <circle cx="10" cy="-85" r="13" fill="#EAB308" />
-//             <circle cx="10" cy="-85" r="6" fill="#422006" />
-//           </g>
-//         </svg>
-//       </div>
-
-//     </div>
-//   );
-// };
-
-import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Link, useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
-import api from '../../services/api';
-import { useAuth } from '../../contexts/AuthContext';
-import DiaryLogo from '../../components/DiaryLogo'
-
+/* ------------------------------------------------------------------ */
+/* Validation Schema                                                   */
+/* ------------------------------------------------------------------ */
 const signUpSchema = z.object({
-  name: z.string().min(2, 'Please enter your name'),
-  username: z.string()
-    .min(3, 'Username must be at least 3 characters')
-    .regex(/^[a-zA-Z0-9_]+$/, 'Only letters, numbers, and underscores'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  name: z.string().min(2, "Please enter your name"),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores"),
+  email: z
+    .string()
+    .min(1, "Please enter your email")
+    .email("That doesn't look like a valid email"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
+/* ------------------------------------------------------------------ */
+/* Motion Presets — reused for consistency                             */
+/* ------------------------------------------------------------------ */
+const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+
+const fieldErrorMotion = {
+  initial: { opacity: 0, height: 0, y: -4 },
+  animate: { opacity: 1, height: "auto", y: 0 },
+  exit: { opacity: 0, height: 0, y: -4 },
+  transition: { duration: 0.2, ease: EASE_OUT },
+};
+
+const cardMotion = {
+  initial: { opacity: 0, y: -8, scale: 0.98 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -8, scale: 0.98 },
+  transition: { duration: 0.28, ease: EASE_OUT },
+};
+
+/* ------------------------------------------------------------------ */
+/* Component                                                           */
+/* ------------------------------------------------------------------ */
 export const SignUp: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+
+  // --- UI state ---
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // --- Feedback state ---
   const [apiError, setApiError] = useState<string | null>(null);
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
-  const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [resendMessage, setResendMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [cooldown, setCooldown] = useState(0);
 
+  // --- Refs ---
+  const errorRef = useRef<HTMLDivElement>(null);
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  /* ---------------------------------------------------------------- */
+  /* Side Effects                                                     */
+  /* ---------------------------------------------------------------- */
+
+  // Countdown for resend button
   useEffect(() => {
-    if (cooldown > 0) {
-      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
   }, [cooldown]);
 
-  const handleResend = async () => {
-    if (!unverifiedEmail) return;
-    try {
-      setResending(true);
-      setResendMessage(null);
-      const res = await api.post("/auth/resend-verification", {
-        email: unverifiedEmail,
-      });
-      setResendMessage({ type: 'success', text: res.data.message || "Verification link sent." });
-      setCooldown(60);
-    } catch (err: any) {
-      setResendMessage({ type: 'error', text: err.message || "Unable to send link at this time." });
-    } finally {
-      setResending(false);
-    }
-  };
-
+  // Auto-dismiss transient resend feedback
   useEffect(() => {
-    const src = 'https://accounts.google.com/gsi/client';
-    const handleScriptLoad = () => {
-      if ((window as any).google) {
-        (window as any).google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: async (response: any) => {
-            if (response && response.credential) {
-              setIsSubmitting(true);
-              setApiError(null);
-              try {
-                const res = await api.post('/auth/google', { idToken: response.credential });
-                if (res.data.success) {
-                  login(res.data.user);
-                  toast.success(res.data.message || 'Welcome to Diary.');
-                  navigate('/stories');
-                }
-              } catch (err: any) {
-                setApiError(err.message || 'Google sign up failed.');
-              } finally {
-                setIsSubmitting(false);
-              }
-            }
-          }
-        });
+    if (!resendMessage) return;
+    const timer = setTimeout(() => setResendMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [resendMessage]);
 
-        (window as any).google.accounts.id.renderButton(
-          document.getElementById('google-signin-btn'),
-          {
-            theme: 'outline',
-            size: 'large',
-            shape: 'pill',
-            text: 'signup_with',
-            width: 280, // Slightly reduced to fit beautifully on mobile
-          }
-        );
+  // Scroll the API error into view when it appears
+  useEffect(() => {
+    if (apiError && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [apiError]);
+
+  /* ---------------------------------------------------------------- */
+  /* Error Parsing                                                    */
+  /* ---------------------------------------------------------------- */
+  const parseError = useCallback(
+    (err: any, context: "signup" | "google" | "resend" = "signup"): string => {
+      if (!navigator.onLine) {
+        return "You appear to be offline. Check your internet connection.";
+      }
+      if (
+        err?.code === "ERR_NETWORK" ||
+        err?.message?.toLowerCase().includes("network")
+      ) {
+        return "Can't reach our servers right now. Please try again in a moment.";
+      }
+
+      const status = err?.response?.status;
+      const serverMsg = err?.response?.data?.message || err?.message || "";
+      const lower = serverMsg.toLowerCase();
+
+      if (status === 429) {
+        return "Too many attempts. Please wait a minute before trying again.";
+      }
+      if (status && status >= 500) {
+        return "Our servers are having a moment. Please try again shortly.";
+      }
+
+      if (context === "signup") {
+        if (lower.includes("email") && lower.includes("exists")) {
+          return "An account with this email already exists.";
+        }
+        if (lower.includes("username") && lower.includes("taken")) {
+          return "This username is already taken.";
+        }
+      }
+
+      if (context === "google") {
+        if (lower.includes("cancel")) return "Google sign-up was cancelled.";
+        return serverMsg || "Google sign-up didn't work. Please try again.";
+      }
+
+      return serverMsg || "Something unexpected happened. Please try again.";
+    },
+    [],
+  );
+
+  /* ---------------------------------------------------------------- */
+  /* Google Identity Services                                         */
+  /* ---------------------------------------------------------------- */
+  useEffect(() => {
+    const SRC = "https://accounts.google.com/gsi/client";
+
+    // Handles the credential returned by Google
+    const handleCredential = async (response: any) => {
+      if (!response?.credential) return;
+      setGoogleLoading(true);
+      setApiError(null);
+      try {
+        const res = await api.post("/auth/google", {
+          idToken: response.credential,
+        });
+        if (res.data.success) {
+          login(res.data.user);
+          navigate("/stories");
+        }
+      } catch (err: any) {
+        setApiError(parseError(err, "google"));
+      } finally {
+        setGoogleLoading(false);
       }
     };
 
-    const existingScript = document.querySelector(`script[src="${src}"]`);
+    // Renders the invisible GSI button that overlays our custom UI
+    const renderButton = () => {
+      const google = (window as any).google;
+      if (!google || !googleBtnRef.current) return;
+
+      try {
+        google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: handleCredential,
+          ux_mode: "popup",
+          auto_select: false,
+          itp_support: true,
+        });
+
+        googleBtnRef.current.innerHTML = "";
+        google.accounts.id.renderButton(googleBtnRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "signup_with",
+          shape: "rectangular",
+          logo_alignment: "center",
+          width: googleBtnRef.current.offsetWidth || 380,
+        });
+
+        setGoogleReady(true);
+      } catch (e) {
+        console.error("Google integration error:", e);
+      }
+    };
+
+    // Load SDK once, then render
+    const existingScript = document.querySelector(`script[src="${SRC}"]`);
     if (!existingScript) {
-      const script = document.createElement('script');
-      script.src = src;
+      const script = document.createElement("script");
+      script.src = SRC;
       script.async = true;
       script.defer = true;
-      script.onload = handleScriptLoad;
+      script.onload = renderButton;
       document.body.appendChild(script);
     } else {
-      handleScriptLoad();
+      renderButton();
     }
-  }, []);
 
+    // Re-render on resize so the invisible button always matches width
+    const handleResize = () => {
+      if ((window as any).google?.accounts?.id) renderButton();
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [login, navigate, parseError]);
+
+  /* ---------------------------------------------------------------- */
+  /* Form                                                             */
+  /* ---------------------------------------------------------------- */
   const {
     register,
     handleSubmit,
-    watch,
     formState: { errors },
+    watch,
   } = useForm<SignUpFormData>({
     resolver: zodResolver(signUpSchema),
+    mode: "onTouched",
   });
 
-  const watchPassword = watch('password', '');
-  const passwordStrength = watchPassword.length >= 10 ? 'Strong'
-    : watchPassword.length >= 8 ? 'Good'
-    : watchPassword.length >= 6 ? 'Fair' : '';
+  const watchPassword = watch("password", "");
+  const passwordStrength =
+    watchPassword.length >= 10
+      ? "Strong"
+      : watchPassword.length >= 8
+        ? "Good"
+        : watchPassword.length >= 4
+          ? "Fair"
+          : "";
 
+  // Clear API error while the user is editing
+  const nameValue = watch("name");
+  const usernameValue = watch("username");
+  const emailValue = watch("email");
+  const passwordValue = watch("password");
+  useEffect(() => {
+    if (apiError) setApiError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nameValue, usernameValue, emailValue, passwordValue]);
+
+  /* ---------------------------------------------------------------- */
+  /* Handlers                                                         */
+  /* ---------------------------------------------------------------- */
   const onSubmit = async (data: SignUpFormData) => {
     try {
       setIsSubmitting(true);
-      setApiError(null);
       setUnverifiedEmail(null);
-      await api.post('/auth/signup', data);
-      
-      // Store the email in sessionStorage to persist on page reloads
-      sessionStorage.setItem('pending_verification_email', data.email);
-      
-      // Redirect to Verify Email page with state
-      navigate('/verify-email', { state: { email: data.email } });
+      setApiError(null);
+
+      await api.post("/auth/signup", data);
+
+      sessionStorage.setItem("pending_verification_email", data.email);
+      navigate("/verify-email", { state: { email: data.email } });
     } catch (err: any) {
-      if (err.message && err.message.includes("not verified")) {
+      const message = err?.response?.data?.message || err?.message || "";
+      if (message.toLowerCase().includes("not verified")) {
         setUnverifiedEmail(data.email);
-        setApiError(null);
       } else {
-        setApiError(err.message || 'We couldn\'t create your account right now.');
+        setApiError(parseError(err, "signup"));
       }
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleResend = async () => {
+    if (!unverifiedEmail || cooldown > 0) return;
+    try {
+      setResending(true);
+      setResendMessage(null);
+      const res = await api.post("/auth/resend-verification", {
+        email: unverifiedEmail,
+      });
+      setResendMessage({
+        type: "success",
+        text: res.data?.message || "Sent! Check your inbox in a few seconds.",
+      });
+      setCooldown(60);
+    } catch (err: any) {
+      setResendMessage({ type: "error", text: parseError(err, "resend") });
+    } finally {
+      setResending(false);
+    }
+  };
+
+  /* ---------------------------------------------------------------- */
+  /* Small local helpers                                              */
+  /* ---------------------------------------------------------------- */
+  const inputBase =
+    "w-full bg-white border-2 rounded-lg py-3.5 text-stone-900 text-[15px] placeholder:text-stone-400 focus:outline-none transition-colors duration-200";
+  const inputOk = "border-transparent focus:border-sky-400";
+  const inputErr = "border-red-400 focus:border-red-500";
+  const iconBase =
+    "absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors duration-200";
+
+  /* ---------------------------------------------------------------- */
+  /* Render                                                           */
+  /* ---------------------------------------------------------------- */
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-stone-900 font-sans selection:bg-stone-900 selection:text-white overflow-hidden">
-      {/* ═══════════ SKY HERO SECTION ═══════════ */}
-      <section className="relative min-h-screen overflow-hidden">
-        {/* Sky Background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              radial-gradient(ellipse at 20% 80%, rgba(255,255,255,0.4) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.3) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 100%, rgba(255,255,255,0.5) 0%, transparent 60%),
-              linear-gradient(to bottom, #7DD3FC, #38BDF8, #0EA5E9)
-            `,
-          }}
-        />
+    <div className="min-h-screen relative overflow-hidden font-sans selection:bg-stone-900 selection:text-white flex flex-col">
+      {/* Sky background */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse at 20% 80%, rgba(255,255,255,0.4) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.3) 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 100%, rgba(255,255,255,0.5) 0%, transparent 60%),
+            linear-gradient(to bottom, #7DD3FC, #38BDF8, #0EA5E9)
+          `,
+        }}
+      />
 
-        {/* Cloud overlays */}
-        <div className="absolute inset-0 opacity-60 pointer-events-none">
-          <div className="absolute top-10 left-10 w-64 h-32 bg-white/40 rounded-full blur-3xl" />
-          <div className="absolute top-40 right-20 w-96 h-40 bg-white/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-1/3 w-80 h-36 bg-white/50 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-1/4 w-72 h-32 bg-white/40 rounded-full blur-3xl" />
-        </div>
+      {/* Header */}
+      <header className="relative z-10 w-full px-6 py-6 md:px-12 md:py-8">
+        <DiaryLogo />
+      </header>
 
-        <div className="relative z-10 flex flex-col min-h-screen">
-          {/* ─── Navbar ─── */}
-          <nav className="flex items-center justify-between px-4 sm:px-6 md:px-10 lg:px-16 py-5 md:py-6">
-            <DiaryLogo/>
-
-            <Link
-              to="/login"
-              className="inline-flex items-center px-5 py-2 md:py-2.5 bg-[#1A1C23] text-white rounded-full text-xs md:text-sm font-bold tracking-wide hover:bg-black transition-all shadow-lg shadow-black/10"
-            >
-              Sign In
-            </Link>
-          </nav>
-
-          {/* ─── Main content ─── */}
-          <main className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-10 py-8 md:py-12">
-            <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-              {/* ─── Left: Welcome copy ─── */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7 }}
-                className="text-center lg:text-left"
+      {/* Main */}
+      <main className="relative z-10 flex-1 flex flex-col justify-center items-center px-4 sm:px-6 pb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: EASE_OUT }}
+          className="w-full max-w-[400px] sm:max-w-[440px]"
+        >
+          {/* Heading */}
+          <div className="mb-7 text-left">
+            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+              Create Account
+            </h1>
+            <p className="text-white/85 text-sm md:text-base">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="text-white font-semibold hover:underline underline-offset-2"
               >
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7 }}
-                  className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-white mb-4 md:mb-6"
-                  style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-                >
-                  Start your<br />
-                  <span className="italic font-normal">Diary today.</span>
-                </motion.h1>
+                Sign in
+              </Link>
+            </p>
+          </div>
 
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.6 }}
-                  className="text-sm md:text-base text-white/90 max-w-md mx-auto lg:mx-0 mb-6 md:mb-8 leading-relaxed"
+          {/* Google button (custom UI + invisible GSI overlay) */}
+          <div className="mb-6">
+            <div className="relative w-full h-[52px] rounded-lg overflow-hidden bg-white/95 hover:bg-white border border-white/20 hover:border-sky-300 focus-within:border-sky-400 transition-colors duration-200 flex items-center justify-center shadow-[0_4px_20px_-2px_rgba(0,0,0,0.08)] select-none active:scale-[0.99] group">
+              {/* Visual layer */}
+              <div className="flex items-center justify-center gap-3 w-full h-full pointer-events-none">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-5 h-5 shrink-0 transition-transform duration-200 group-hover:scale-105"
                 >
-                  Create your account and start writing what you want to
-                  remember, share, and come back to.
-                </motion.p>
+                  <path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                    fill="#FBBC05"
+                  />
+                  <path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                </svg>
+                <span className="text-stone-700 font-bold text-[15px] tracking-tight">
+                  Sign up with Google
+                </span>
+              </div>
 
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4, duration: 0.6 }}
-                  className="hidden md:flex flex-col items-center lg:items-start gap-1"
-                >
-                  <p className="text-[11px] md:text-xs text-white/80 font-medium tracking-wide uppercase">
-                    Write · Share · Read · Connect
-                  </p>
-                </motion.div>
+              {/* Invisible clickable Google button */}
+              <div
+                ref={googleBtnRef}
+                className={`absolute inset-0 w-full h-full opacity-[0.01] z-10 scale-y-[1.4] scale-x-[1.05] cursor-pointer origin-center ${
+                  googleReady ? "block" : "hidden"
+                }`}
+                aria-label="Sign up with Google"
+              />
+
+              {/* Initial load overlay */}
+              {!googleReady && (
+                <div className="absolute inset-0 bg-white/95 flex items-center justify-center gap-2 z-20">
+                  <Loader2 className="w-4 h-4 animate-spin text-stone-400" />
+                  <span className="text-sm font-semibold text-stone-500">
+                    Connecting to Google...
+                  </span>
+                </div>
+              )}
+
+              {/* Post-click auth overlay */}
+              {googleLoading && (
+                <div className="absolute inset-0 bg-white/95 backdrop-blur-sm flex items-center justify-center gap-2.5 z-30">
+                  <Loader2 className="w-5 h-5 animate-spin text-stone-700" />
+                  <span className="text-[14px] font-bold text-stone-700">
+                    Creating your account...
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3.5 mb-6">
+            <div className="flex-1 h-px bg-white/30" />
+            <span className="text-xs font-semibold text-white/80 uppercase tracking-wider whitespace-nowrap">
+              Or register with email
+            </span>
+            <div className="flex-1 h-px bg-white/30" />
+          </div>
+
+          {/* API error banner */}
+          <AnimatePresence mode="wait">
+            {apiError && (
+              <motion.div
+                ref={errorRef}
+                key="api-error"
+                {...cardMotion}
+                className="mb-5"
+                role="alert"
+                aria-live="polite"
+              >
+                <div className="relative bg-rose-50/95 backdrop-blur-md border border-rose-100/80 rounded-xl px-4 py-3.5 flex items-start gap-3 shadow-[0_10px_30px_rgba(244,63,94,0.15)] overflow-hidden">
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-rose-500" />
+                  <div className="flex-shrink-0 mt-0.5 bg-rose-100 p-1 rounded-lg">
+                    <AlertCircle
+                      className="w-4 h-4 text-rose-600"
+                      strokeWidth={2.5}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0 pr-2">
+                    <h5 className="text-[13px] font-bold text-rose-950 mb-0.5">
+                      Registration Error
+                    </h5>
+                    <p className="text-[12.5px] text-rose-800 font-medium leading-relaxed">
+                      {apiError}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setApiError(null)}
+                    className="flex-shrink-0 p-1 rounded-lg text-rose-400 hover:text-rose-700 hover:bg-rose-100/50 transition-colors"
+                    aria-label="Dismiss error"
+                  >
+                    <X className="w-4 h-4" strokeWidth={2.5} />
+                  </button>
+                </div>
               </motion.div>
+            )}
+          </AnimatePresence>
 
-              {/* ─── Right: Signup card ─── */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.7 }}
-                className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto"
-              >
-                <div
-                  className="bg-white rounded-3xl p-6 md:p-8 shadow-2xl"
-                  style={{ boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
-                >
-                  {/* Card header */}
-                  <div className="mb-5">
-                    <p className="text-[10px] font-bold tracking-[0.2em] text-stone-500 uppercase mb-1.5">
-                      · Create account ·
-                    </p>
-                    <h2
-                      className="text-2xl md:text-3xl font-bold tracking-tight text-stone-900"
-                      style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-                    >
-                      Join Diary in<br />
-                      <span className="italic font-normal">under a minute.</span>
-                    </h2>
-                  </div>
-
-                  {/* Error Display */}
-                  {apiError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-2.5">
-                      <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-[12px] text-red-600 font-medium leading-relaxed">
-                        {apiError}
+          {/* Unverified email card */}
+          <AnimatePresence>
+            {unverifiedEmail && (
+              <motion.div {...cardMotion} className="mb-5">
+                <div className="relative bg-amber-50/95 backdrop-blur-md border border-amber-100/80 rounded-xl p-4 shadow-[0_12px_30px_rgba(217,119,6,0.15)]">
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500" />
+                  <div className="flex items-start gap-3.5">
+                    <div className="bg-amber-100 p-2 rounded-lg shrink-0">
+                      <Mail
+                        className="w-4 h-4 text-amber-700"
+                        strokeWidth={2}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[13.5px] font-bold text-amber-950 mb-1 leading-snug">
+                        Please verify your email
+                      </h4>
+                      <p className="text-[12.5px] text-amber-900 leading-relaxed font-medium mb-3">
+                        We sent an activation link to{" "}
+                        <span className="font-bold text-amber-950 underline decoration-amber-500/50 break-all">
+                          {unverifiedEmail}
+                        </span>
+                        .
                       </p>
-                    </div>
-                  )}
 
-                  {/* Persistent Verification Warning Section */}
-                  {unverifiedEmail && (
-                    <div className="mb-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl text-left">
-                      <div className="flex items-start gap-2.5">
-                        <svg className="w-4.5 h-4.5 text-amber-600 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <div>
-                          <h4 className="text-[11px] font-bold text-amber-900 uppercase tracking-widest mb-1">
-                            Verification Required
-                          </h4>
-                          <p className="text-xs text-amber-800 leading-relaxed font-medium mb-3">
-                            This email is registered but not verified. We sent a verification link to <strong className="break-all">{unverifiedEmail}</strong>. Please check your inbox to verify your email.
-                          </p>
-                          
-                          <div className="flex items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={handleResend}
-                              disabled={resending || cooldown > 0}
-                              className="text-[11px] font-bold text-sky-600 hover:text-sky-800 flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
-                            >
-                              {resending ? (
-                                <>
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                  Resending...
-                                </>
-                              ) : cooldown > 0 ? (
-                                `Resend in ${cooldown}s`
-                              ) : (
-                                "Resend Verification Email"
-                              )}
-                            </button>
-                          </div>
-
-                          {/* Status message */}
-                          {resendMessage && (
-                            <p className={`text-[11px] mt-2 font-bold ${
-                              resendMessage.type === 'success' ? 'text-emerald-600' : 'text-red-650'
-                            }`}>
-                              {resendMessage.text}
-                            </p>
+                      <div className="flex items-center gap-3.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={handleResend}
+                          disabled={resending || cooldown > 0}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:bg-stone-200/80 disabled:text-stone-500 text-white text-[12px] font-bold rounded-lg shadow-sm transition-colors disabled:cursor-not-allowed"
+                        >
+                          {resending ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Sending...</span>
+                            </>
+                          ) : cooldown > 0 ? (
+                            <span>Resend in {cooldown}s</span>
+                          ) : (
+                            <span>Resend link</span>
                           )}
-                        </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUnverifiedEmail(null)}
+                          className="text-[12px] font-bold text-amber-800 hover:text-amber-950 px-2 py-1.5 rounded-lg hover:bg-amber-100/50 transition-colors"
+                        >
+                          Dismiss
+                        </button>
                       </div>
-                    </div>
-                  )}
 
-                  {/* ─── Form ─── */}
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-                    {/* Name */}
-                    <div>
-                      <label htmlFor="name" className="block text-[10px] font-bold tracking-widest uppercase text-stone-500 mb-1.5">
-                        Your name
-                      </label>
-                      <input
-                        id="name"
-                        type="text"
-                        autoComplete="name"
-                        {...register('name')}
-                        placeholder="e.g. Alex Morgan"
-                        className={`w-full bg-stone-50 border-2 rounded-[14px] px-4 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none transition-all ${
-                          errors.name ? 'border-red-300 focus:border-red-500' : 'border-stone-100 focus:border-sky-400'
-                        }`}
-                      />
-                      {errors.name && <p className="text-[10px] text-red-500 mt-1 pl-1">{errors.name.message}</p>}
-                    </div>
-
-                    {/* Username */}
-                    <div>
-                      <label htmlFor="username" className="block text-[10px] font-bold tracking-widest uppercase text-stone-500 mb-1.5">
-                        Username
-                      </label>
-                      <div className={`relative flex items-center bg-stone-50 border-2 rounded-[14px] transition-all focus-within:bg-white ${
-                        errors.username ? 'border-red-300 focus-within:border-red-500' : 'border-stone-100 focus-within:border-sky-400'
-                      }`}>
-                        <span className="pl-4 text-sm text-stone-400 select-none font-medium">@</span>
-                        <input
-                          id="username"
-                          type="text"
-                          autoComplete="username"
-                          {...register('username')}
-                          placeholder="yourhandle"
-                          className="flex-1 bg-transparent py-2.5 pr-4 pl-1 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none"
-                        />
-                      </div>
-                      {errors.username && <p className="text-[10px] text-red-500 mt-1 pl-1">{errors.username.message}</p>}
-                    </div>
-
-                    {/* Email */}
-                    <div>
-                      <label htmlFor="email" className="block text-[10px] font-bold tracking-widest uppercase text-stone-500 mb-1.5">
-                        Email
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        autoComplete="email"
-                        {...register('email')}
-                        placeholder="you@example.com"
-                        className={`w-full bg-stone-50 border-2 rounded-[14px] px-4 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none transition-all ${
-                          errors.email ? 'border-red-300 focus:border-red-500' : 'border-stone-100 focus:border-sky-400'
-                        }`}
-                      />
-                      {errors.email && <p className="text-[10px] text-red-500 mt-1 pl-1">{errors.email.message}</p>}
-                    </div>
-
-                    {/* Password */}
-                    <div>
-                      <label htmlFor="password" className="block text-[10px] font-bold tracking-widest uppercase text-stone-500 mb-1.5">
-                        Password
-                      </label>
-                      <input
-                        id="password"
-                        type="password"
-                        autoComplete="new-password"
-                        {...register('password')}
-                        placeholder="At least 6 characters"
-                        className={`w-full bg-stone-50 border-2 rounded-[14px] px-4 py-2.5 text-sm text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none transition-all ${
-                          errors.password ? 'border-red-300 focus:border-red-500' : 'border-stone-100 focus:border-sky-400'
-                        }`}
-                      />
-                      {errors.password && <p className="text-[10px] text-red-500 mt-1 pl-1">{errors.password.message}</p>}
-                      
-                      {/* Slimmer Password strength meter */}
-                      {watchPassword && !errors.password && (
-                        <div className="mt-1.5 px-1 flex items-center gap-2">
-                          <div className="flex-1 h-1 bg-stone-100 rounded-full overflow-hidden">
+                      {/* Resend feedback */}
+                      <AnimatePresence mode="wait">
+                        {resendMessage && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4, height: 0 }}
+                            animate={{ opacity: 1, y: 0, height: "auto" }}
+                            exit={{ opacity: 0, y: -4, height: 0 }}
+                            transition={{ duration: 0.22, ease: EASE_OUT }}
+                            className="overflow-hidden"
+                          >
                             <div
-                              className={`h-full transition-all duration-300 ${
-                                passwordStrength === 'Strong' ? 'w-full bg-emerald-500' :
-                                passwordStrength === 'Good' ? 'w-2/3 bg-lime-500' :
-                                passwordStrength === 'Fair' ? 'w-1/3 bg-amber-500' : 'w-0'
+                              className={`mt-3 flex items-center gap-1.5 text-[12.5px] font-bold px-2.5 py-1.5 rounded-lg border ${
+                                resendMessage.type === "success"
+                                  ? "text-emerald-800 bg-emerald-100/50 border-emerald-100"
+                                  : "text-rose-800 bg-rose-100/50 border-rose-100"
                               }`}
-                            />
-                          </div>
-                          <span className={`text-[9px] font-bold uppercase tracking-wider ${
-                            passwordStrength === 'Strong' ? 'text-emerald-600' :
-                            passwordStrength === 'Good' ? 'text-lime-600' :
-                            passwordStrength === 'Fair' ? 'text-amber-600' : 'text-stone-400'
-                          }`}>
-                            {passwordStrength || 'Weak'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <p className="text-[10px] text-stone-500 text-center leading-relaxed pt-1">
-                      By creating an account, you agree to our{' '}
-                      <Link to="/terms" className="text-sky-600 hover:text-sky-800 font-semibold">Terms</Link>
-                      {' '}and{' '}
-                      <Link to="/privacy" className="text-sky-600 hover:text-sky-800 font-semibold">Privacy</Link>.
-                    </p>
-
-                    {/* Submit Button */}
-                    <div className="pt-1">
-                      <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#C6F547] text-stone-900 rounded-full text-xs md:text-sm font-bold tracking-wide uppercase hover:bg-[#b5e236] transition-all group disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Creating…
-                          </>
-                        ) : (
-                          <>
-                            Create Account
-                            <span className="w-5 h-5 bg-stone-900 text-white rounded-full flex items-center justify-center text-[10px] group-hover:rotate-45 transition-transform">
-                              →
-                            </span>
-                          </>
+                            >
+                              {resendMessage.type === "success" ? (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              ) : (
+                                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                              )}
+                              <span className="leading-tight">
+                                {resendMessage.text}
+                              </span>
+                            </div>
+                          </motion.div>
                         )}
-                      </button>
+                      </AnimatePresence>
                     </div>
-                  </form>
-
-                  {/* Divider */}
-                  <div className="flex items-center gap-3 my-4">
-                    <div className="flex-1 h-px bg-stone-100"></div>
-                    <span className="text-[9px] font-bold tracking-widest uppercase text-stone-400">Or</span>
-                    <div className="flex-1 h-px bg-stone-100"></div>
-                  </div>
-
-                  {/* Google button */}
-                  <div className="w-full flex justify-center">
-                    <div id="google-signin-btn"></div>
-                  </div>
-
-                  {/* Bottom Login Prompt */}
-                  <div className="mt-5 pt-4 border-t border-stone-100 text-center">
-                    <p className="text-xs text-stone-600 font-medium">
-                      Already have an account?{' '}
-                      <Link to="/login" className="text-sky-600 hover:text-sky-800 font-bold transition-colors">
-                        Sign in
-                      </Link>
-                    </p>
                   </div>
                 </div>
               </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Sign-up form */}
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-4"
+            noValidate
+          >
+            {/* Name */}
+            <div>
+              <div className="relative group">
+                <User
+                  className={`${iconBase} ${
+                    errors.name
+                      ? "text-red-400"
+                      : "text-stone-400 group-focus-within:text-sky-500"
+                  }`}
+                  style={{ width: 18, height: 18 }}
+                />
+                <input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Full name"
+                  aria-invalid={!!errors.name}
+                  aria-describedby={errors.name ? "name-error" : undefined}
+                  {...register("name")}
+                  className={`${inputBase} pl-11 pr-4 ${errors.name ? inputErr : inputOk}`}
+                />
+              </div>
+              <AnimatePresence>
+                {errors.name && (
+                  <motion.div
+                    id="name-error"
+                    {...fieldErrorMotion}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center gap-1.5 mt-2 pl-1.5">
+                      <div className="w-1 h-1 rounded-full bg-white shrink-0" />
+                      <p className="text-[12.5px] text-white font-medium tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]">
+                        {errors.name.message}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
-          </main>
-        </div>
-      </section>
+
+            {/* Username */}
+            <div>
+              <div className="relative group">
+                <AtSign
+                  className={`${iconBase} ${
+                    errors.username
+                      ? "text-red-400"
+                      : "text-stone-400 group-focus-within:text-sky-500"
+                  }`}
+                  style={{ width: 18, height: 18 }}
+                />
+                <input
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Username"
+                  aria-invalid={!!errors.username}
+                  aria-describedby={
+                    errors.username ? "username-error" : undefined
+                  }
+                  {...register("username")}
+                  className={`${inputBase} pl-11 pr-4 ${errors.username ? inputErr : inputOk}`}
+                />
+              </div>
+              <AnimatePresence>
+                {errors.username && (
+                  <motion.div
+                    id="username-error"
+                    {...fieldErrorMotion}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center gap-1.5 mt-2 pl-1.5">
+                      <div className="w-1 h-1 rounded-full bg-white shrink-0" />
+                      <p className="text-[12.5px] text-white font-medium tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]">
+                        {errors.username.message}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Email */}
+            <div>
+              <div className="relative group">
+                <Mail
+                  className={`${iconBase} ${
+                    errors.email
+                      ? "text-red-400"
+                      : "text-stone-400 group-focus-within:text-sky-500"
+                  }`}
+                  style={{ width: 18, height: 18 }}
+                />
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Email address"
+                  aria-invalid={!!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
+                  {...register("email")}
+                  className={`${inputBase} pl-11 pr-4 ${errors.email ? inputErr : inputOk}`}
+                />
+              </div>
+              <AnimatePresence>
+                {errors.email && (
+                  <motion.div
+                    id="email-error"
+                    {...fieldErrorMotion}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center gap-1.5 mt-2 pl-1.5">
+                      <div className="w-1 h-1 rounded-full bg-white shrink-0" />
+                      <p className="text-[12.5px] text-white font-medium tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]">
+                        {errors.email.message}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Password */}
+            <div>
+              <div className="relative group">
+                <Lock
+                  className={`${iconBase} ${
+                    errors.password
+                      ? "text-red-400"
+                      : "text-stone-400 group-focus-within:text-sky-500"
+                  }`}
+                  style={{ width: 18, height: 18 }}
+                />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Password"
+                  aria-invalid={!!errors.password}
+                  aria-describedby={
+                    errors.password ? "password-error" : undefined
+                  }
+                  {...register("password")}
+                  className={`${inputBase} pl-11 pr-11 ${errors.password ? inputErr : inputOk}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
+
+              {/* Password strength meter */}
+              {watchPassword && !errors.password && (
+                <div className="mt-2.5 px-1.5 flex items-center gap-3">
+                  <div className="flex-1 h-1 bg-white/20 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-300 ease-out ${
+                        passwordStrength === "Strong"
+                          ? "w-full bg-[#C6F547]"
+                          : passwordStrength === "Good"
+                            ? "w-2/3 bg-amber-400"
+                            : passwordStrength === "Fair"
+                              ? "w-1/3 bg-red-400"
+                              : "w-0"
+                      }`}
+                    />
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-wider transition-colors duration-200 ${
+                      passwordStrength === "Strong"
+                        ? "text-[#C6F547]"
+                        : passwordStrength === "Good"
+                          ? "text-amber-300"
+                          : passwordStrength === "Fair"
+                            ? "text-red-300"
+                            : "text-white/40"
+                    }`}
+                  >
+                    {passwordStrength || "Weak"}
+                  </span>
+                </div>
+              )}
+
+              <AnimatePresence>
+                {errors.password && (
+                  <motion.div
+                    id="password-error"
+                    {...fieldErrorMotion}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center gap-1.5 mt-2 pl-1.5">
+                      <div className="w-1 h-1 rounded-full bg-white shrink-0" />
+                      <p className="text-[12.5px] text-white font-medium tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]">
+                        {errors.password.message}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3.5 mt-2 bg-[#C6F547] text-stone-900 rounded-lg font-bold text-[15px] tracking-wide hover:bg-[#b5e236] active:scale-[0.98] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:bg-[#C6F547] flex items-center justify-center gap-2 shadow-lg shadow-black/10"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Creating account...</span>
+                </>
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-8 text-left">
+            <p className="text-[12px] text-white/70">
+              Need help?{" "}
+              <a
+                href="mailto:diaryteam.official@gmail.com"
+                className="text-white font-medium underline underline-offset-2 hover:text-white/90 transition-colors"
+              >
+                Contact us
+              </a>
+            </p>
+          </div>
+        </motion.div>
+      </main>
     </div>
   );
 };
