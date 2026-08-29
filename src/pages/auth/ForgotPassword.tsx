@@ -1,81 +1,173 @@
 
+import React, { useState, useEffect, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Link } from "react-router-dom";
+import {
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  Mail,
+  ArrowLeft,
+  X,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Link } from 'react-router-dom';
-import { Loader2, Mail, ArrowLeft } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import api from '../../services/api';
+import api from "../../services/api";
 import DiaryLogo from "../../components/DiaryLogo";
 
+// ─────────────────────────────────────────────
+// Validation
+// ─────────────────────────────────────────────
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z
+    .string()
+    .min(1, "Please enter your email")
+    .email("That doesn't look like a valid email"),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
+// ─────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────
+
 export const ForgotPassword: React.FC = () => {
+  // Form flow state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [submittedEmail, setSubmittedEmail] = useState<string>('');
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [cooldown, setCooldown] = useState(0);
 
-  // New UI Error/Success States
+  // Feedback state
   const [apiError, setApiError] = useState<string | null>(null);
-  const [resendMessage, setResendMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [resendMessage, setResendMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  const errorRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<ForgotPasswordFormData>({
     resolver: zodResolver(forgotPasswordSchema),
+    mode: "onTouched",
   });
 
-  const startCooldown = () => {
-    setResendCooldown(30);
-    const interval = setInterval(() => {
-      setResendCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  const emailValue = watch("email");
+
+  // Countdown for resend button
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [cooldown]);
+
+  // Auto-hide resend feedback after 5s
+  useEffect(() => {
+    if (!resendMessage) return;
+    const timer = setTimeout(() => setResendMessage(null), 5000);
+    return () => clearTimeout(timer);
+  }, [resendMessage]);
+
+  // Bring error banner into view on mobile
+  useEffect(() => {
+    if (apiError && errorRef.current) {
+      errorRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [apiError]);
+
+  // Clear the banner as soon as the user edits their email
+  useEffect(() => {
+    if (apiError) setApiError(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailValue]);
+
+  // Turn any error (network, 4xx, 5xx) into a friendly message
+  const parseError = (
+    err: any,
+    context: "forgot" | "resend" = "forgot",
+  ): string => {
+    if (!navigator.onLine) {
+      return "You appear to be offline. Check your internet connection.";
+    }
+
+    if (
+      err?.code === "ERR_NETWORK" ||
+      err?.message?.toLowerCase().includes("network")
+    ) {
+      return "Can't reach our servers right now. Please try again in a moment.";
+    }
+
+    const status = err?.response?.status;
+    const serverMsg = err?.response?.data?.message || err?.message || "";
+    const lower = serverMsg.toLowerCase();
+
+    if (status === 429) {
+      return "Too many attempts. Please wait a minute before trying again.";
+    }
+    if (status && status >= 500) {
+      return "Our servers are having a moment. Please try again shortly.";
+    }
+
+    if (context === "forgot") {
+      const notFound =
+        status === 404 ||
+        lower.includes("not found") ||
+        lower.includes("no user");
+
+      if (notFound) return "We couldn't find an account with that email.";
+    }
+
+    return serverMsg || "Something unexpected happened. Please try again.";
   };
+
+  // ─── Handlers ───
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
       setIsSubmitting(true);
       setApiError(null);
-      await api.post('/auth/forgot-password', data);
-      
+
+      await api.post("/auth/forgot-password", data);
+
       setSubmittedEmail(data.email);
       setIsSubmitted(true);
-      startCooldown();
-    } catch (err: any) {
-      setApiError(err.message || 'We had trouble sending the link. Please try again.');
+      setCooldown(30);
+    } catch (err) {
+      setApiError(parseError(err, "forgot"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleResend = async () => {
-    if (resendCooldown > 0 || !submittedEmail) return;
+    if (cooldown > 0 || !submittedEmail) return;
+
     try {
       setIsSubmitting(true);
       setResendMessage(null);
-      const res = await api.post('/auth/forgot-password', { email: submittedEmail });
-      
-      setResendMessage({ type: 'success', text: res.data.message || 'Another reset link has been sent.' });
-      startCooldown();
-    } catch (err: any) {
-      setResendMessage({ type: 'error', text: err.message || "We couldn't resend the link right now." });
+
+      const res = await api.post("/auth/forgot-password", {
+        email: submittedEmail,
+      });
+
+      setResendMessage({
+        type: "success",
+        text:
+          res.data?.message ||
+          "Another reset link has been sent to your inbox.",
+      });
+      setCooldown(30);
+    } catch (err) {
+      setResendMessage({ type: "error", text: parseError(err, "resend") });
     } finally {
       setIsSubmitting(false);
     }
@@ -83,352 +175,330 @@ export const ForgotPassword: React.FC = () => {
 
   const handleTryDifferentEmail = () => {
     setIsSubmitted(false);
-    setSubmittedEmail('');
-    setResendCooldown(0);
+    setSubmittedEmail("");
+    setCooldown(0);
     setApiError(null);
     setResendMessage(null);
     reset();
   };
 
+  // ─── Render ───
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-stone-900 font-sans selection:bg-stone-900 selection:text-white overflow-hidden">
+    <div className="min-h-screen relative overflow-hidden font-sans selection:bg-stone-900 selection:text-white flex flex-col">
+      {/* Sky-blue background with soft light spots */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: `
+            radial-gradient(ellipse at 20% 80%, rgba(255,255,255,0.4) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.3) 0%, transparent 50%),
+            radial-gradient(ellipse at 50% 100%, rgba(255,255,255,0.5) 0%, transparent 60%),
+            linear-gradient(to bottom, #7DD3FC, #38BDF8, #0EA5E9)
+          `,
+        }}
+      />
 
-      {/* ═══════════ SKY HERO SECTION — matches Login/Signup ═══════════ */}
-      <section className="relative min-h-screen overflow-hidden">
+      <header className="relative z-10 w-full px-6 py-6 md:px-12 md:py-8">
+        <DiaryLogo />
+      </header>
 
-        {/* Sky Background */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              radial-gradient(ellipse at 20% 80%, rgba(255,255,255,0.4) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.3) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 100%, rgba(255,255,255,0.5) 0%, transparent 60%),
-              linear-gradient(to bottom, #7DD3FC, #38BDF8, #0EA5E9)
-            `,
-          }}
-        />
-
-        {/* Cloud overlays */}
-        <div className="absolute inset-0 opacity-60 pointer-events-none">
-          <div className="absolute top-10 left-10 w-64 h-32 bg-white/40 rounded-full blur-3xl" />
-          <div className="absolute top-40 right-20 w-96 h-40 bg-white/30 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 left-1/3 w-80 h-36 bg-white/50 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-1/4 w-72 h-32 bg-white/40 rounded-full blur-3xl" />
-        </div>
-
-        <div className="relative z-10 flex flex-col min-h-screen">
-
-          {/* ─── Navbar ─── */}
-          <nav className="flex items-center justify-between px-4 sm:px-6 md:px-10 lg:px-16 py-5 md:py-6">
-          <DiaryLogo></DiaryLogo>
-
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-2 px-4 md:px-6 py-2 md:py-2.5 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full text-xs md:text-sm font-bold tracking-wide uppercase hover:bg-white/30 transition-all"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back to sign in
-            </Link>
-          </nav>
-
-          {/* ─── Main content ─── */}
-          <main className="flex-1 flex items-center justify-center px-4 sm:px-6 md:px-10 py-8 md:py-12">
-            <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-
-              {/* ─── Left: Contextual copy ─── */}
+      <main className="relative z-10 flex-1 flex flex-col justify-center items-center px-4 sm:px-6 pb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-[400px] sm:max-w-[440px]"
+        >
+          <AnimatePresence mode="wait">
+            {!isSubmitted ? (
+              // ═══════════════════════════════════════════
+              // Form state — ask for email
+              // ═══════════════════════════════════════════
               <motion.div
-                key={isSubmitted ? 'sent-copy' : 'form-copy'}
-                initial={{ opacity: 0, y: 20 }}
+                key="forgot-form"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7 }}
-                className="text-center lg:text-left"
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25 }}
               >
-                {!isSubmitted ? (
-                  <>
-                    <h1
-                      className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-white mb-4 md:mb-6"
-                      style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                {/* Heading */}
+                <div className="mb-7 text-left">
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+                    Reset Password
+                  </h1>
+                  <p className="text-white/85 text-sm md:text-base">
+                    Remembered?{" "}
+                    <Link
+                      to="/login"
+                      className="text-white font-semibold underline underline-offset-2"
                     >
-                      Forgot your<br />
-                      <span className="italic font-normal">password?</span>
-                    </h1>
-                    <p className="text-sm md:text-base text-white/90 max-w-md mx-auto lg:mx-0 mb-6 md:mb-8 leading-relaxed">
-                      No worries — it happens. Enter the email you used to
-                      sign up, and we'll send you a link to create a new password.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <h1
-                      className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] text-white mb-4 md:mb-6"
-                      style={{ fontFamily: "'Fraunces', Georgia, serif" }}
+                      Back to sign in
+                    </Link>
+                  </p>
+                </div>
+
+                {/* Server error banner */}
+                <AnimatePresence initial={false} mode="wait">
+                  {apiError && (
+                    <motion.div
+                      ref={errorRef}
+                      key="api-error"
+                      initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+                      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                      className="mb-4"
+                      role="alert"
+                      aria-live="polite"
                     >
-                      Check your<br />
-                      <span className="italic font-normal">inbox.</span>
-                    </h1>
-                    <p className="text-sm md:text-base text-white/90 max-w-md mx-auto lg:mx-0 mb-6 md:mb-8 leading-relaxed">
-                      We just sent a reset link to your email.
-                      Open it and click the link inside to set a new password.
-                    </p>
-                  </>
-                )}
+                      <div className="relative bg-white rounded-lg px-4 py-3 flex items-start gap-3 shadow-lg shadow-red-900/10 border border-red-100">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-lg" />
 
-                <p className="hidden md:block text-[11px] md:text-xs text-white/80 font-medium tracking-wide uppercase">
-                  Write · Share · Read · Connect
-                </p>
-              </motion.div>
-
-              {/* ─── Right: Card ─── */}
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.7 }}
-                className="w-full max-w-md mx-auto lg:mx-0 lg:ml-auto"
-              >
-                <div
-                  className="bg-white rounded-3xl p-6 md:p-8 shadow-2xl"
-                  style={{ boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}
-                >
-                  <AnimatePresence mode="wait">
-                    {!isSubmitted ? (
-                      /* ═══ FORM STATE ═══ */
-                      <motion.div
-                        key="form"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        {/* Card header */}
-                        <div className="mb-6">
-                          <p className="text-[10px] font-bold tracking-[0.2em] text-stone-500 uppercase mb-2">
-                            · Reset password ·
-                          </p>
-                          <h2
-                            className="text-2xl md:text-3xl font-bold tracking-tight text-stone-900"
-                            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-                          >
-                            Let's find<br />
-                            <span className="italic font-normal">your account.</span>
-                          </h2>
-                        </div>
-
-                        {/* UI Error Message Display */}
-                        {apiError && (
-                          <div className="mb-5 p-3.5 bg-red-50 border border-red-100 rounded-2xl flex items-start gap-2.5">
-                            <svg className="w-4 h-4 text-red-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="text-[13px] text-red-600 font-medium leading-relaxed">
-                              {apiError}
-                            </p>
-                          </div>
-                        )}
-
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                          {/* Email */}
-                          <div>
-                            <label
-                              htmlFor="email"
-                              className="block text-[11px] font-bold tracking-widest uppercase text-stone-500 mb-2"
-                            >
-                              Your email address
-                            </label>
-                            <input
-                              id="email"
-                              type="email"
-                              autoComplete="email"
-                              autoFocus
-                              {...register('email')}
-                              placeholder="you@example.com"
-                              className={`w-full bg-stone-50 border-2 rounded-2xl px-5 py-3 text-sm text-stone-900 placeholder:text-stone-400 focus:bg-white focus:outline-none transition-all ${
-                                errors.email
-                                  ? 'border-red-300 focus:border-red-500'
-                                  : 'border-stone-100 focus:border-sky-400'
-                              }`}
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                            <AlertCircle
+                              className="w-3 h-3 text-white"
+                              strokeWidth={2.5}
                             />
-                            {errors.email ? (
-                              <p className="text-[11px] text-red-500 mt-1.5 ml-1">
-                                {errors.email.message}
-                              </p>
-                            ) : (
-                              <p className="text-[11px] text-stone-500 mt-1.5 ml-1">
-                                Use the email you signed up with.
-                              </p>
-                            )}
                           </div>
-
-                          {/* Submit */}
-                          <div className="pt-2">
-                            <button
-                              type="submit"
-                              disabled={isSubmitting}
-                              className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#C6F547] text-stone-900 rounded-full text-xs md:text-sm font-bold tracking-wide uppercase hover:bg-[#b5e236] transition-all group disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                              {isSubmitting ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                  Sending link…
-                                </>
-                              ) : (
-                                <>
-                                  Send Reset Link
-                                  <span className="w-5 h-5 md:w-6 md:h-6 bg-stone-900 text-white rounded-full flex items-center justify-center text-[10px] group-hover:rotate-45 transition-transform">
-                                    →
-                                  </span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </form>
-
-                        {/* Back to sign in */}
-                        <div className="mt-6 pt-5 border-t border-stone-100 text-center">
-                          <p className="text-sm text-stone-600">
-                            Remember your password?{' '}
-                            <Link
-                              to="/login"
-                              className="text-sky-600 hover:text-sky-800 font-bold transition-colors"
-                            >
-                              Sign in
-                            </Link>
-                          </p>
                         </div>
-                      </motion.div>
+
+                        <p className="flex-1 text-[13.5px] text-stone-800 font-medium leading-relaxed pt-0.5">
+                          {apiError}
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={() => setApiError(null)}
+                          className="flex-shrink-0 -mr-1 -mt-1 p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors"
+                          aria-label="Dismiss error"
+                        >
+                          <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  className="space-y-4"
+                  noValidate
+                >
+                  {/* Email field */}
+                  <div>
+                    <div className="relative group">
+                      <Mail
+                        className={`absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors ${
+                          errors.email
+                            ? "text-red-400"
+                            : "text-stone-400 group-focus-within:text-sky-500"
+                        }`}
+                        style={{ width: 18, height: 18 }}
+                      />
+                      <input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        placeholder="Your email address"
+                        aria-invalid={!!errors.email}
+                        aria-describedby={
+                          errors.email ? "email-error" : undefined
+                        }
+                        {...register("email")}
+                        className={`w-full bg-white border-2 rounded-md pl-11 pr-4 py-3.5 text-stone-900 text-[15px] placeholder:text-stone-400 focus:outline-none transition-all ${
+                          errors.email
+                            ? "border-red-400 focus:border-red-500"
+                            : "border-transparent focus:border-sky-400"
+                        }`}
+                      />
+                    </div>
+
+                    {/* Either show validation error, or the helper hint */}
+                    <AnimatePresence initial={false}>
+                      {errors.email ? (
+                        <motion.div
+                          id="email-error"
+                          initial={{ opacity: 0, height: 0, y: -4 }}
+                          animate={{ opacity: 1, height: "auto", y: 0 }}
+                          exit={{ opacity: 0, height: 0, y: -4 }}
+                          transition={{ duration: 0.18, ease: "easeOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex items-center gap-1.5 mt-2 pl-1">
+                            <div className="w-1 h-1 rounded-full bg-white shrink-0" />
+                            <p className="text-[12.5px] text-white font-medium tracking-wide drop-shadow-[0_1px_2px_rgba(0,0,0,0.15)]">
+                              {errors.email.message}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <p className="text-[12px] text-white mt-2 pl-1 font-medium">
+                          Enter your email and we'll send you a link to reset
+                          your password.
+                        </p>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Submit */}
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 mt-2 bg-[#C6F547] text-stone-900 rounded-md font-bold text-[15px] hover:bg-[#b5e236] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:bg-[#C6F547] flex items-center justify-center gap-2 shadow-md"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Sending reset link...</span>
+                      </>
                     ) : (
-                      /* ═══ SUCCESS STATE ═══ */
-                      <motion.div
-                        key="success"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.4 }}
-                      >
-                        {/* Success icon */}
-                        <div className="flex justify-center mb-5">
-                          <div className="w-14 h-14 bg-[#C6F547] rounded-full flex items-center justify-center">
-                            <Mail className="w-6 h-6 text-stone-900" strokeWidth={2.5} />
-                          </div>
+                      "Send Reset Link"
+                    )}
+                  </button>
+                </form>
+              </motion.div>
+            ) : (
+              // ═══════════════════════════════════════════
+              // Success state — link sent
+              // ═══════════════════════════════════════════
+              <motion.div
+                key="forgot-success"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25 }}
+              >
+                {/* Heading */}
+                <div className="mb-7 text-left">
+                  <h1 className="text-3xl md:text-4xl font-bold text-white mb-2 tracking-tight">
+                    Check Your Inbox
+                  </h1>
+                  <button
+                    onClick={handleTryDifferentEmail}
+                    className="text-white font-semibold hover:underline underline-offset-2 text-sm md:text-base flex items-center gap-1"
+                  >
+                    <ArrowLeft size={16} /> Use a different email
+                  </button>
+                </div>
+
+                {/* Success card */}
+                <div className="relative bg-white rounded-lg p-5 shadow-lg border border-emerald-100">
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-l-lg" />
+
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-full bg-emerald-50 flex items-center justify-center shrink-0 border border-emerald-200">
+                      <Mail
+                        className="w-4 h-4 text-emerald-600"
+                        strokeWidth={2.5}
+                      />
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-[14.5px] font-bold text-stone-900 mb-1">
+                        Reset link successfully sent
+                      </h4>
+                      <p className="text-[13px] text-stone-600 leading-relaxed mb-4">
+                        We sent a secure password reset link to{" "}
+                        <span className="font-semibold text-stone-800 break-all">
+                          {submittedEmail}
+                        </span>
+                        . Please check your inbox and click on the link to
+                        proceed.
+                      </p>
+
+                      {/* Small tips */}
+                      <div className="space-y-2.5 mb-4 text-[12.5px] text-stone-500 leading-normal">
+                        <div className="flex items-start gap-2">
+                          <span className="font-bold text-emerald-600">•</span>
+                          <span>The link expires in 30 minutes.</span>
                         </div>
-
-                        {/* Header */}
-                        <div className="text-center mb-6">
-                          <p className="text-[10px] font-bold tracking-[0.2em] text-emerald-600 uppercase mb-2">
-                            · Link sent ·
-                          </p>
-                          <h2
-                            className="text-2xl md:text-3xl font-bold tracking-tight text-stone-900"
-                            style={{ fontFamily: "'Fraunces', Georgia, serif" }}
-                          >
-                            Check your<br />
-                            <span className="italic font-normal">email inbox.</span>
-                          </h2>
+                        <div className="flex items-start gap-2">
+                          <span className="font-bold text-emerald-600">•</span>
+                          <span>
+                            Check your Spam or Promotions folder if it doesn't
+                            arrive soon.
+                          </span>
                         </div>
+                      </div>
 
-                        {/* Email address highlight */}
-                        <div className="bg-sky-50 border-2 border-sky-100 rounded-2xl p-4 mb-5">
-                          <p className="text-[10px] font-bold tracking-widest uppercase text-sky-700 mb-1">
-                            We sent the link to
-                          </p>
-                          <p className="text-sm font-bold text-stone-900 break-all">
-                            {submittedEmail}
-                          </p>
-                        </div>
-
-                        {/* What to do next */}
-                        <div className="space-y-3 mb-6">
-                          <div className="flex gap-3">
-                            <div className="shrink-0 w-6 h-6 bg-stone-100 rounded-full flex items-center justify-center text-[11px] font-bold text-stone-600">
-                              1
-                            </div>
-                            <p className="text-sm text-stone-700 leading-relaxed">
-                              Open your inbox and look for an email from{' '}
-                              <span className="font-semibold">Diary</span>.
-                            </p>
-                          </div>
-                          <div className="flex gap-3">
-                            <div className="shrink-0 w-6 h-6 bg-stone-100 rounded-full flex items-center justify-center text-[11px] font-bold text-stone-600">
-                              2
-                            </div>
-                            <p className="text-sm text-stone-700 leading-relaxed">
-                              Click the reset link inside — it's valid for the next{' '}
-                              <span className="font-semibold">30 minutes</span>.
-                            </p>
-                          </div>
-                          <div className="flex gap-3">
-                            <div className="shrink-0 w-6 h-6 bg-stone-100 rounded-full flex items-center justify-center text-[11px] font-bold text-stone-600">
-                              3
-                            </div>
-                            <p className="text-sm text-stone-700 leading-relaxed">
-                              Set your new password and you're back in.
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Spam folder note */}
-                        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 mb-4">
-                          <p className="text-[12px] text-amber-800 leading-relaxed">
-                            <span className="font-bold">Can't find it?</span> Check your{' '}
-                            <span className="font-semibold">Spam</span> or{' '}
-                            <span className="font-semibold">Promotions</span> folder.
-                            The email can sometimes take a minute or two to arrive.
-                          </p>
-                        </div>
-
-                        {/* Resend Status UI Alert */}
-                        {resendMessage && (
-                          <div className={`mb-4 p-3 border rounded-2xl flex items-start gap-2.5 ${resendMessage.type === 'success' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
-                            <p className={`text-[12px] font-medium leading-relaxed ${resendMessage.type === 'success' ? 'text-green-700' : 'text-red-600'}`}>
-                              {resendMessage.text}
-                            </p>
-                          </div>
-                        )}
-
-                        {/* Resend button */}
+                      {/* Actions */}
+                      <div className="flex items-center gap-3 flex-wrap border-t border-stone-100 pt-4">
                         <button
                           type="button"
                           onClick={handleResend}
-                          disabled={resendCooldown > 0 || isSubmitting}
-                          className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-stone-100 hover:bg-stone-200 text-stone-900 rounded-full text-xs font-bold tracking-wide uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+                          disabled={isSubmitting || cooldown > 0}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white text-[12px] font-semibold rounded-md transition-colors disabled:bg-stone-200 disabled:text-stone-500 disabled:cursor-not-allowed"
                         >
                           {isSubmitting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : resendCooldown > 0 ? (
-                            <>Resend in {resendCooldown}s</>
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              Resending...
+                            </>
+                          ) : cooldown > 0 ? (
+                            `Resend in ${cooldown}s`
                           ) : (
-                            <>Resend Link</>
+                            "Resend link"
                           )}
                         </button>
 
-                        {/* Try different email */}
-                        <button
-                          type="button"
-                          onClick={handleTryDifferentEmail}
-                          className="w-full text-center text-sm text-sky-600 hover:text-sky-800 font-bold transition-colors py-2"
+                        <Link
+                          to="/login"
+                          className="text-[12px] font-semibold text-stone-500 hover:text-stone-800 transition-colors"
                         >
-                          Use a different email address
-                        </button>
+                          Back to Sign In
+                        </Link>
+                      </div>
 
-                        {/* Back to sign in */}
-                        <div className="mt-4 pt-5 border-t border-stone-100 text-center">
-                          <Link
-                            to="/login"
-                            className="inline-flex items-center gap-1.5 text-sm text-stone-600 hover:text-stone-900 font-medium transition-colors"
+                      {/* Resend feedback */}
+                      <AnimatePresence initial={false}>
+                        {resendMessage && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -4, height: 0 }}
+                            animate={{ opacity: 1, y: 0, height: "auto" }}
+                            exit={{ opacity: 0, y: -4, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
                           >
-                            <ArrowLeft className="w-3.5 h-3.5" />
-                            Back to sign in
-                          </Link>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                            <div
+                              className={`mt-3 flex items-center gap-1.5 text-[12px] font-semibold ${
+                                resendMessage.type === "success"
+                                  ? "text-emerald-700"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {resendMessage.type === "success" ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                              ) : (
+                                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                              )}
+                              <span>{resendMessage.text}</span>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
-            </div>
-          </main>
-        </div>
-      </section>
+            )}
+          </AnimatePresence>
+
+          {/* Footer support link */}
+          <div className="mt-8 text-left">
+            <p className="text-[12px] text-white/70">
+              Need help?{" "}
+              <a
+                href="mailto:diaryteam.official@gmail.com"
+                className="text-white font-medium underline underline-offset-2 hover:text-white/90 transition-colors"
+              >
+                Contact us
+              </a>
+            </p>
+          </div>
+        </motion.div>
+      </main>
     </div>
   );
 };
