@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { Component, useState } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
@@ -18,83 +18,113 @@ export class ErrorBoundary extends Component<Props, State> {
     errorInfo: null
   };
 
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, errorInfo: null };
+  public static getDerivedStateFromError(error: Error): Partial<State> {
+    return {
+      hasError: true,
+      error,
+      errorInfo: null
+    };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({
-      error,
-      errorInfo
-    });
-    console.error('Uncaught error inside ErrorBoundary:', error, errorInfo);
+    this.setState({ error, errorInfo });
+    console.error('App error:', error, errorInfo);
   }
-
-  private handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
-    window.location.href = '/stories';
-  };
 
   private handleReload = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
     window.location.reload();
   };
 
+  private handleHome = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    window.location.href = '/stories';
+  };
+
   public render() {
-    if (this.state.hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-[#fcfaf7] dark:bg-slate-950 px-6 py-12 transition-colors duration-300 font-sans">
-          <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-[2.5rem] p-8 md:p-10 shadow-2xl text-center relative overflow-hidden">
-            
-            {/* Background design elements */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-brand/5 rounded-full blur-3xl -ml-16 -mb-16"></div>
-
-            {/* Error icon circle */}
-            <div className="w-16 h-16 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-brand mx-auto mb-6 shadow-sm">
-              <i className="ri-error-warning-fill text-3xl"></i>
-            </div>
-
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Something went off-page
-            </h1>
-            
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-serif italic mt-3 leading-relaxed">
-              "Every story has its twists, but this chapter encountered an unexpected turn."
-            </p>
-
-            {this.state.error && (
-              <div className="mt-6 text-left bg-slate-50 dark:bg-slate-950/60 border border-slate-100 dark:border-slate-850 rounded-2xl p-4 max-h-40 overflow-y-auto">
-                <p className="text-xs font-mono font-bold text-red-500 truncate">
-                  {this.state.error.name}: {this.state.error.message}
-                </p>
-                {this.state.error.stack && (
-                  <pre className="text-[10px] font-mono text-slate-400 dark:text-slate-550 mt-2 whitespace-pre-wrap leading-tight">
-                    {this.state.error.stack.split('\n').slice(0, 3).join('\n')}
-                  </pre>
-                )}
-              </div>
-            )}
-
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <button
-                onClick={this.handleReload}
-                className="px-6 py-3 bg-brand text-white font-bold text-xs uppercase tracking-widest rounded-full shadow-lg shadow-orange-500/15 hover:scale-105 active:scale-95 transition-transform"
-              >
-                Reload Page
-              </button>
-              <button
-                onClick={this.handleReset}
-                className="px-6 py-3 bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-bold text-xs uppercase tracking-widest rounded-full shadow-md hover:scale-105 active:scale-95 transition-transform"
-              >
-                Go to Feed
-              </button>
-            </div>
-          </div>
-        </div>
-      );
+    if (!this.state.hasError) {
+      return this.props.children;
     }
 
-    return this.props.children;
+    return (
+      <div className="min-h-screen bg-[#F6F9FC] px-4 py-8 font-sans flex items-center justify-center">
+        <main className="w-full max-w-xl" role="alert">
+          <div className="rounded-3xl bg-[#A8DCFF] p-6 sm:p-10 shadow-sm border border-sky-200">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-700">
+              Error
+            </p>
+
+            <h1 className="mt-2 text-3xl font-black text-slate-950 sm:text-4xl">
+              Something went wrong.
+            </h1>
+
+            <p className="mt-3 text-base text-slate-800 leading-relaxed">
+              An error occurred while loading this page. Please reload the page or go back.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                onClick={this.handleReload}
+                className="rounded-full bg-[#D9F26B] px-6 py-3 text-sm font-bold text-slate-950 hover:bg-[#c9e35b] transition-colors"
+              >
+                Reload page
+              </button>
+
+              <button
+                onClick={this.handleHome}
+                className="rounded-full bg-[#0A0A0A] px-6 py-3 text-sm font-bold text-white hover:bg-slate-800 transition-colors"
+              >
+                Go to stories
+              </button>
+            </div>
+
+            {/* Technical details only visible in development */}
+            {import.meta.env.DEV && this.state.error && (
+              <ErrorDetails error={this.state.error} />
+            )}
+          </div>
+        </main>
+      </div>
+    );
   }
+}
+
+function ErrorDetails({ error }: { error: Error }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(`${error.name}: ${error.message}\n${error.stack || ''}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <details className="mt-6 border-t border-slate-900/10 pt-4">
+      <summary className="cursor-pointer text-xs font-bold uppercase tracking-wider text-slate-700 hover:text-slate-950">
+        Debug information (Dev Only)
+      </summary>
+
+      <div className="mt-3 rounded-xl bg-white/70 p-4">
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <span className="font-mono text-xs font-bold text-slate-900">
+            {error.name}: {error.message}
+          </span>
+          <button
+            onClick={handleCopy}
+            type="button"
+            className="rounded bg-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-800 hover:bg-slate-300"
+          >
+            {copied ? 'Copied' : 'Copy'}
+          </button>
+        </div>
+
+        {error.stack && (
+          <pre className="max-h-32 overflow-auto text-[11px] font-mono text-slate-600 whitespace-pre-wrap">
+            {error.stack.split('\n').slice(0, 3).join('\n')}
+          </pre>
+        )}
+      </div>
+    </details>
+  );
 }
