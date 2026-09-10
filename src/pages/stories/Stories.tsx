@@ -359,59 +359,59 @@ function TopHeroSection({ stories }: { stories: Story[] }) {
   );
 }
 
-function PremiumWriteCard() {
+export default function PremiumWriteCard() {
   return (
     <Link
       to="/write"
       className="group relative block w-full overflow-hidden rounded-2xl sm:rounded-[24px] mb-6 sm:mb-8"
     >
-      {/* Base — deep ink with warm paper undertone */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#1a1520] via-[#121018] to-[#0c0a10]" />
+      {/* Base — Deep Electric Cobalt Canvas */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#020826] via-[#00145a] to-[#01061c]" />
 
-      {/* Soft color wash — diary ink + parchment feel */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(196,149,106,0.18),_transparent_55%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(120,90,160,0.14),_transparent_50%)]" />
+      {/* Soft color wash — Sunset Coral (Top Right) & Electric Cyan (Bottom Left) */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,92,0,0.35),_transparent_55%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(0,212,255,0.22),_transparent_50%)]" />
 
-      {/* Fine top hairline (editorial) */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c4956a]/40 to-transparent" />
+      {/* Fine top hairline — Sunset Gold Highlight */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF7A00]/60 to-transparent" />
 
       {/* Right-side soft panel glow on larger screens */}
-      <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-[#c4956a]/8 to-transparent  pointer-events-none" />
+      <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-[#FF5C00]/12 to-transparent pointer-events-none" />
 
       <div className="relative z-10 flex items-center gap-3 sm:gap-5 px-4 py-3.5 sm:px-7 sm:py-5">
-        {/* Accent mark — vertical gold bar (no icon / no abstract pages) */}
-        <div className=" w-[3px] self-stretch min-h-[40px] rounded-full bg-gradient-to-b from-[#e8c9a0] via-[#c4956a] to-[#8b6a4a] opacity-90 shrink-0" />
+        {/* Accent mark — Vivid Gradient Bar (Sunset Orange to Electric Cyan) */}
+        <div className="w-[3px] self-stretch min-h-[40px] rounded-full bg-gradient-to-b from-[#FF9E00] via-[#FF0055] to-[#00D4FF] opacity-95 shrink-0" />
 
         {/* Copy */}
         <div className="flex-1 min-w-0">
-          <p className="hidden sm:block text-[10px] font-medium tracking-[0.2em] uppercase text-[#c4956a] mb-1">
+          <p className="hidden sm:block text-[10px] font-medium tracking-[0.2em] uppercase text-[#FF9E00] mb-1">
             New entry
           </p>
-          <h2 className="text-[15px] sm:text-lg font-semibold text-[#f5f0ea] tracking-tight leading-snug">
+          <h2 className="text-[15px] sm:text-lg font-semibold text-white tracking-tight leading-snug">
             Write something today
           </h2>
-          <p className=" text-[13px] text-[#a89f96] mt-0.5 leading-snug">
+          <p className="text-[13px] text-[#A3B3D9] mt-0.5 leading-snug">
             A quiet place for your thoughts.
           </p>
         </div>
 
-        {/* CTA */}
+        {/* CTA — Acid Lime Pop Button (Matches reference image styling) */}
         <div className="shrink-0">
-          <span className="inline-flex items-center gap-1.5 bg-[#f5f0ea] text-[#1a1520] text-xs sm:text-sm font-semibold px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full group-hover:bg-white transition-colors shadow-sm">
-            <span className="">Write</span>
+          <span className="inline-flex items-center gap-1.5 bg-[#88FF00] text-[#020826] text-xs sm:text-sm font-bold px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full group-hover:bg-[#9eff1a] group-hover:shadow-[0_0_20px_rgba(136,255,0,0.4)] transition-all shadow-sm">
+            <span>Write</span>
 
             <svg
               width="14"
               height="14"
               viewBox="0 0 24 24"
               fill="none"
-              className="opacity-70 group-hover:translate-x-0.5 transition-transform"
+              className="opacity-90 group-hover:translate-x-0.5 transition-transform"
               aria-hidden
             >
               <path
                 d="M5 12h14M13 6l6 6-6 6"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
@@ -420,110 +420,142 @@ function PremiumWriteCard() {
         </div>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
     </Link>
   );
+}
+
+// Types (retained for TypeScript safety)
+interface CategoryCardsProps {
+  active: string;
+  onSelect: (c: string) => void;
+  categories?: Record<
+    string,
+    { label: string; image: string; description?: string; color?: string }
+  >;
 }
 
 function CategoryCardsWithImages({
   active,
   onSelect,
-}: {
-  active: string;
-  onSelect: (c: string) => void;
-}) {
+  categories = CATEGORIES, // Uses your CATEGORIES object
+}: CategoryCardsProps) {
   return (
-    <section className="mb-8 sm:mb-10">
-      <div className="flex items-baseline justify-between gap-3 mb-3.5 sm:mb-4">
+    <section className="mb-7 sm:mb-10">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3 mb-3.5 sm:mb-4">
         <div className="min-w-0">
-          <h3 className="text-[15px] sm:text-base font-semibold text-neutral-900 tracking-tight">
+          <h3 className="text-base sm:text-lg font-bold text-neutral-900 tracking-tight">
             Browse by mood
           </h3>
-          <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5 hidden sm:block">
-            Tap a genre to filter stories
+          <p className="text-xs text-neutral-500 mt-0.5 hidden sm:block">
+            Select a genre to filter stories
           </p>
         </div>
+
         {active && (
           <button
             onClick={() => onSelect("")}
-            className="shrink-0 text-[11px] sm:text-xs font-medium text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200/80 px-2.5 py-1 rounded-full transition-colors"
+            type="button"
+            className="shrink-0 text-xs font-semibold text-neutral-600 hover:text-neutral-950 bg-neutral-100 hover:bg-neutral-200/80 px-3 py-1.5 rounded-full transition-all active:scale-95"
           >
-            Clear
+            Clear filter
           </button>
         )}
       </div>
 
-      <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-0.5">
-        {/* All */}
+      {/* Horizontal Scroll Deck */}
+      <div className="flex gap-2.5 sm:gap-3.5 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 py-1">
+        {/* "ALL" Card — Styled as a sleek tactile trigger */}
         <button
           onClick={() => onSelect("")}
-          className={`snap-start shrink-0 relative h-[72px] sm:h-[84px] w-[72px] sm:w-[92px] rounded-2xl overflow-hidden transition-all duration-300 ${
+          type="button"
+          className={`snap-start shrink-0 relative h-[82px] sm:h-[94px] w-[82px] sm:w-[100px] rounded-2xl overflow-hidden transition-all duration-300 active:scale-[0.97] border ${
             !active
-              ? "ring-2 ring-neutral-900 ring-offset-2 shadow-md"
-              : "hover:opacity-95"
+              ? "border-neutral-900 bg-neutral-900 text-white shadow-lg shadow-neutral-900/15 ring-2 ring-neutral-900/10"
+              : "border-neutral-200/80 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/60"
           }`}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-neutral-950" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,255,255,0.12),_transparent_60%)]" />
-          <div className="relative z-10 h-full flex flex-col items-center justify-center px-1.5">
-            <span className="text-white text-[11px] sm:text-xs font-semibold tracking-tight">
+          {/* Active subtle background glow */}
+          {!active && (
+            <div className="absolute inset-0 bg-gradient-to-br from-neutral-700 via-neutral-900 to-black opacity-90" />
+          )}
+
+          <div className="relative z-10 h-full flex flex-col items-center justify-center p-2 text-center">
+            <span className="text-xs sm:text-sm font-bold tracking-tight">
               All
+            </span>
+            <span
+              className={`text-[10px] mt-0.5 font-medium ${
+                !active ? "text-neutral-400" : "text-neutral-500"
+              }`}
+            >
+              Explore
             </span>
           </div>
         </button>
 
-        {Object.entries(CATEGORIES).map(([key, cat]) => {
+        {/* Category Cards */}
+        {Object.entries(categories).map(([key, cat]) => {
           const isActive = active === key;
           return (
             <button
               key={key}
               onClick={() => onSelect(isActive ? "" : key)}
-              className={`snap-start shrink-0 relative h-[72px] sm:h-[84px] w-[112px] sm:w-[132px] rounded-2xl overflow-hidden transition-all duration-300 ${
+              type="button"
+              className={`group snap-start shrink-0 relative h-[82px] sm:h-[94px] w-[124px] sm:w-[148px] rounded-2xl overflow-hidden transition-all duration-300 active:scale-[0.97] border ${
                 isActive
-                  ? "ring-2 ring-neutral-900 ring-offset-2 shadow-md scale-[1.02]"
-                  : "hover:shadow-md hover:-translate-y-0.5"
+                  ? "border-neutral-950 ring-2 ring-neutral-950 ring-offset-2 shadow-xl scale-[1.02]"
+                  : "border-black/5 hover:border-black/15 shadow-sm hover:shadow-md hover:-translate-y-0.5"
               }`}
             >
-              {/* Image */}
+              {/* Background Image */}
               <img
                 src={cat.image}
-                alt=""
-                className="absolute inset-0 w-full h-full object-cover scale-100 group-hover:scale-105 transition-transform duration-700"
+                alt={cat.label}
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                 loading="lazy"
               />
 
-              {/* Overlay — readable, not muddy */}
-              <div
-                className={`absolute inset-0 bg-gradient-to-t ${cat.color || "from-black/80 to-black/20"} opacity-80`}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-black/10" />
+              {/* Scrim Overlay — Guarantees 100% text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
 
-              {/* Label only — no icon clutter */}
+              {/* Category Color Wash (Optional accent) */}
+              {cat.color && (
+                <div
+                  className={`absolute inset-0 bg-gradient-to-t ${cat.color} opacity-40 mix-blend-overlay`}
+                />
+              )}
+
+              {/* Active State Checkmark Badge */}
+              {isActive && (
+                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white text-neutral-950 flex items-center justify-center shadow-md animate-in fade-in zoom-in-75 duration-200">
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              )}
+
+              {/* Content Label */}
               <div className="relative z-10 h-full flex flex-col justify-end p-2.5 sm:p-3 text-left">
-                <span className="text-white text-[12px] sm:text-[13px] font-semibold leading-tight tracking-tight drop-shadow-sm">
+                <span className="text-white text-[13px] sm:text-[14px] font-bold leading-tight tracking-tight drop-shadow-sm truncate">
                   {cat.label}
                 </span>
                 {cat.description && (
-                  <span className="hidden sm:block text-white/70 text-[10px] mt-0.5 leading-tight line-clamp-1">
+                  <span className="text-neutral-300 text-[10px] sm:text-[11px] font-medium mt-0.5 leading-tight line-clamp-1 opacity-90">
                     {cat.description}
                   </span>
                 )}
               </div>
-
-              {/* Active check — small, quiet */}
-              {isActive && (
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-sm">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M5 13l4 4L19 7"
-                      stroke="#171717"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              )}
             </button>
           );
         })}
@@ -535,98 +567,90 @@ function CategoryCardsWithImages({
 function WritersSmallRow({ writers }: { writers: Writer[] }) {
   if (!writers.length) return null;
 
+  // Soft diary-safe gradients (readable, not neon-AI)
+  const gradients = [
+    "from-[#2a211c] via-[#4a3728] to-[#c4956a]",
+    "from-[#1c1a2a] via-[#3d2a4a] to-[#8b6a9a]",
+    "from-[#1a2420] via-[#2a4038] to-[#6a9a8a]",
+    "from-[#241c1c] via-[#4a2a2a] to-[#c47a6a]",
+    "from-[#1a1e28] via-[#2a3850] to-[#6a8ab4]",
+    "from-[#241c18] via-[#5a4030] to-[#d4a574]",
+    "from-[#1c2428] via-[#2a4850] to-[#5a9aa8]",
+    "from-[#221c28] via-[#403050] to-[#9a7ab0]",
+  ];
+
   return (
-    <section className="mb-10 sm:mb-14">
-      {/* Header Section */}
-      <div className="flex items-baseline justify-between gap-3 mb-4 sm:mb-5">
+    <section className="mb-8 sm:mb-12">
+      {/* Header */}
+      <div className="flex items-end justify-between gap-3 mb-3.5 sm:mb-4">
         <div className="min-w-0">
-          <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 tracking-tight">
+          <h3 className="text-base sm:text-lg font-semibold text-neutral-900 tracking-tight">
             Voices to follow
           </h3>
-          <p className="text-xs sm:text-sm text-neutral-500 mt-0.5">
-            Writers our community keeps coming back to
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Writers people come back to
           </p>
         </div>
         <Link
           to="/search"
-          className="shrink-0 text-xs font-semibold text-[#c4956a] hover:text-[#8b6a4a] transition-colors flex items-center gap-1"
+          className="shrink-0 text-xs font-medium text-neutral-600 hover:text-neutral-900 transition-colors flex items-center gap-0.5"
         >
-          View all <i className="ri-arrow-right-line" />
+          See all
+          <i className="ri-arrow-right-s-line text-sm" />
         </Link>
       </div>
 
-      {/* Horizontal Scroll Container */}
-      <div className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-4">
+      {/* Horizontal banners — reference layout */}
+      <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-1">
         {writers.slice(0, 8).map((writer, i) => (
           <Link
             key={writer._id}
             to={`/profile/${writer.username}`}
-            className="group relative flex flex-col snap-start shrink-0 w-[160px] sm:w-[180px] rounded-2xl sm:rounded-[24px] overflow-hidden hover:-translate-y-1 transition-transform duration-500 shadow-sm hover:shadow-xl"
+            className="group snap-start shrink-0 relative w-[220px] sm:w-[248px] h-[104px] sm:h-[112px] rounded-2xl overflow-hidden active:scale-[0.98] transition-transform duration-200"
           >
-            {/* Base — deep ink with warm paper undertone */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1a1520] via-[#121018] to-[#0c0a10]" />
+            {/* Gradient base */}
+            <div
+              className={`absolute inset-0 bg-gradient-to-r ${gradients[i % gradients.length]}`}
+            />
 
-            {/* Soft color wash — diary ink + parchment feel */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(196,149,106,0.18),_transparent_55%)] opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(120,90,160,0.14),_transparent_50%)] opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+            {/* Light wash for depth (no noise, no orbs) */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-white/10" />
 
-            {/* Fine top hairline (editorial) */}
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c4956a]/40 to-transparent" />
-
-            {/* Bottom hairline */}
-            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-
-            <div className="relative z-10 flex flex-col items-center text-center px-4 py-6 sm:py-7">
-              {/* Avatar Container with Premium Ring */}
-              <div className="relative mb-4">
-                <div className="rounded-full p-[2px] bg-gradient-to-b from-[#e8c9a0] via-[#c4956a] to-[#8b6a4a] opacity-90 group-hover:opacity-100 transition-opacity shadow-[0_0_15px_rgba(196,149,106,0.2)]">
-                  <div className="bg-[#121018] rounded-full p-[2px]">
-                    <Avatar
-                      src={writer.image?.url}
-                      alt={writer.username}
-                      size={56}
-                    />
-                  </div>
-                </div>
-
-                {/* Ranking Badge */}
-                {i < 3 && (
-                  <span
-                    className={`absolute -bottom-1 -right-1 min-w-[20px] h-[20px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center ring-2 ring-[#121018] shadow-sm ${
-                      i === 0
-                        ? "bg-gradient-to-br from-[#e8c9a0] to-[#c4956a] text-[#1a1520]"
-                        : i === 1
-                          ? "bg-gradient-to-br from-gray-300 to-gray-400 text-[#1a1520]"
-                          : "bg-gradient-to-br from-[#c4956a] to-[#8b6a4a] text-white"
-                    }`}
-                  >
-                    #{i + 1}
-                  </span>
-                )}
-              </div>
-
-              {/* Writer Info */}
-              <h4 className="text-[14px] sm:text-[15px] font-semibold text-[#f5f0ea] truncate w-full leading-tight">
+            {/* Text — left */}
+            <div className="relative z-10 h-full flex flex-col justify-center pl-3.5 sm:pl-4 pr-[88px] sm:pr-[96px]">
+              {i < 3 && (
+                <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70 mb-1">
+                  Top writer
+                </span>
+              )}
+              <h4 className="text-[15px] sm:text-base font-bold text-white leading-tight truncate">
                 {writer.name || writer.username}
               </h4>
-              <p className="text-[11px] sm:text-xs text-[#c4956a] truncate w-full mt-1 font-medium tracking-wide">
+              <p className="text-[11px] text-white/75 truncate mt-0.5">
                 @{writer.username}
               </p>
-
-              {/* Decorative Divider */}
-              <div className="w-8 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mt-4 mb-3" />
-
-              {/* Metric */}
-              <p className="text-[11px] text-[#a89f96]">
-                <span className="font-semibold text-[#f5f0ea]">
-                  {formatCount(writer.followers?.length || 0)}
-                </span>{" "}
-                followers
+              <p className="text-[11px] text-white/90 mt-2 font-medium tabular-nums">
+                {formatCount(writer.followers?.length || 0)}{" "}
+                <span className="font-normal text-white/65">followers</span>
               </p>
             </div>
 
-            {/* Subtle right-side soft panel glow appearing on hover */}
-            <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-[#c4956a]/0 group-hover:from-[#c4956a]/5 to-transparent pointer-events-none transition-all duration-500" />
+            {/* Photo — right, large crop like reference */}
+            <div className="absolute right-0 top-0 bottom-0 w-[92px] sm:w-[100px]">
+              <div className="absolute inset-0 bg-gradient-to-r from-black/25 to-transparent z-10 pointer-events-none" />
+              {writer.image?.url ? (
+                <img
+                  src={writer.image.url}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-[1.04] transition-transform duration-500"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                  <Avatar src={undefined} alt={writer.username} size={56} />
+                </div>
+              )}
+            </div>
           </Link>
         ))}
       </div>
@@ -656,47 +680,49 @@ function PremiumStoryCard({ story }: { story: Story }) {
   })();
 
   return (
-    <Link to={`/stories/${story._id}`} className="group block">
-      {/* ── Cover ── */}
-      <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-100 mb-2.5">
+    <Link
+      to={`/stories/${story._id}`}
+      className="group block active:scale-[0.98] transition-transform duration-150"
+    >
+      {/* Cover */}
+      <div className="relative aspect-[3/4] rounded-[18px] sm:rounded-2xl overflow-hidden bg-neutral-100 mb-2.5 ring-1 ring-black/[0.04] shadow-sm group-hover:shadow-md transition-shadow duration-300">
         {story.image?.url ? (
           <img
             src={story.image.url}
-            alt={story.title}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             loading="lazy"
           />
         ) : (
           <div
             className={`absolute inset-0 bg-gradient-to-br ${
-              cat.color || cat.gradient || "from-neutral-600 to-neutral-900"
+              cat.color || cat.gradient || "from-neutral-700 to-neutral-900"
             }`}
           />
         )}
 
-        {/* Bottom fade for genre legibility */}
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
+        {/* Soft bottom scrim — text stays readable */}
+        <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/65 via-black/25 to-transparent pointer-events-none" />
 
-        {/* Genre — bottom left on cover */}
-        <span className="absolute bottom-2 left-2 text-[10px] font-semibold text-white/95 tracking-wide">
+        {/* Genre pill */}
+        <span className="absolute bottom-2 left-2 max-w-[70%] truncate px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-[10px] font-semibold text-white tracking-wide border border-white/10">
           {cat.label}
         </span>
 
-        {/* Time — bottom right on cover */}
-        <span className="absolute bottom-2 right-2 text-[10px] font-medium text-white/80 tabular-nums">
+        {/* Time */}
+        <span className="absolute bottom-2.5 right-2.5 text-[10px] font-medium text-white/85 tabular-nums">
           {timeAgo}
         </span>
       </div>
 
-      {/* ── Body ── */}
-      <div className="min-w-0 space-y-1.5">
-        {/* Title */}
-        <h4 className="text-[13px] sm:text-[14px] font-semibold text-neutral-900 leading-[1.35] line-clamp-2 tracking-tight group-hover:text-neutral-600 transition-colors">
+      {/* Body */}
+      <div className="min-w-0 px-0.5">
+        <h4 className="text-[13px] sm:text-[14px] font-semibold text-neutral-900 leading-snug line-clamp-2 tracking-tight group-hover:text-neutral-600 transition-colors duration-200">
           {story.title}
         </h4>
 
         {/* Author */}
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
           <Avatar
             src={story.owner?.image?.url}
             alt={story.owner?.username || ""}
@@ -707,8 +733,8 @@ function PremiumStoryCard({ story }: { story: Story }) {
           </span>
         </div>
 
-        {/* Stats row */}
-        <div className="flex items-center gap-3 text-[11px] text-neutral-400">
+        {/* Stats — quiet, secondary */}
+        <div className="flex items-center gap-2.5 mt-1.5 text-[11px] text-neutral-400 tabular-nums">
           <span className="inline-flex items-center gap-1">
             <svg
               width="12"
@@ -732,6 +758,10 @@ function PremiumStoryCard({ story }: { story: Story }) {
               />
             </svg>
             {formatCount(views)}
+          </span>
+
+          <span className="text-neutral-300" aria-hidden>
+            ·
           </span>
 
           <span className="inline-flex items-center gap-1">
@@ -1077,43 +1107,45 @@ export const Stories: React.FC = () => {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      {/* ══════════ DESKTOP HEADER ══════════ */}
-      {/* ══════════ HEADER ══════════ */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-xl border-b border-neutral-200/70">
+      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-2xl border-b border-black/[0.04] supports-[backdrop-filter]:bg-white/50 transition-colors duration-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-14 sm:h-16 flex items-center justify-between gap-3 sm:gap-6">
-            {/* Left — logo + desktop nav */}
-            <div className="flex items-center gap-6 sm:gap-8 min-w-0 shrink-0">
-              <Link to="/" className="flex items-center shrink-0">
+          <div className="h-16 md:h-20 flex items-center justify-between gap-4 sm:gap-8">
+            {/* 1. Left — Logo & App-like Segmented Nav */}
+            <div className="flex items-center gap-6 xl:gap-8 min-w-0 shrink-0">
+              <Link
+                to="/"
+                className="flex items-center shrink-0 hover:opacity-80 transition-opacity active:scale-95"
+              >
+                {/* Replace with your actual Logo component */}
                 <DiaryLogo />
               </Link>
 
-              <nav className="hidden lg:flex items-center gap-1">
+              {/* Segmented Control Nav (Premium Desktop look) */}
+              <nav className="hidden lg:flex items-center bg-neutral-100/80 p-1 rounded-full border border-neutral-200/50 shadow-inner">
                 <Link
                   to="/"
-                  className="px-3 py-1.5 text-sm font-medium text-neutral-900 rounded-full bg-neutral-100"
+                  className="px-4 py-1.5 text-[13px] font-bold text-neutral-900 bg-white rounded-full shadow-sm ring-1 ring-black/5"
                 >
                   Stories
                 </Link>
                 <Link
                   to="/search"
-                  className="px-3 py-1.5 text-sm font-medium text-neutral-500 hover:text-neutral-900 hover:bg-neutral-50 rounded-full transition-colors"
+                  className="px-4 py-1.5 text-[13px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors rounded-full hover:bg-neutral-200/50"
                 >
                   Writers
                 </Link>
               </nav>
             </div>
 
-            {/* Center — search (tablet & up) */}
-            <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg">
+            {/* 2. Center — Command Palette Style Search */}
+            <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg transition-all duration-300 group">
               <div className="relative w-full">
                 <svg
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-neutral-900 transition-colors"
                   width="16"
                   height="16"
                   viewBox="0 0 24 24"
                   fill="none"
-                  aria-hidden
                 >
                   <circle
                     cx="11"
@@ -1129,52 +1161,53 @@ export const Stories: React.FC = () => {
                     strokeLinecap="round"
                   />
                 </svg>
+
                 <input
                   type="text"
-                  placeholder="Search stories or writers"
+                  placeholder="Search stories or writers..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full h-10 pl-10 pr-9 rounded-full bg-neutral-100 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none border border-transparent focus:bg-white focus:border-neutral-300 focus:ring-2 focus:ring-neutral-900/10 transition-all"
+                  className="w-full h-10 pl-10 pr-12 rounded-full bg-neutral-100/80 text-[14px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none border border-transparent focus:bg-white focus:border-neutral-200 focus:ring-4 focus:ring-neutral-900/5 transition-all duration-300"
                 />
-                {searchInput && (
+
+                {/* Dynamic Right Element: Clear button OR Shortcut Hint */}
+                {searchInput ? (
                   <button
                     type="button"
                     onClick={() => {
                       setSearchInput("");
                       setSearch("");
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700 hover:bg-neutral-200/80 transition-colors"
-                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-200/80 transition-all active:scale-90"
                   >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                       <path
                         d="M6 6l12 12M18 6L6 18"
                         stroke="currentColor"
-                        strokeWidth="2.2"
+                        strokeWidth="2.5"
                         strokeLinecap="round"
                       />
                     </svg>
                   </button>
+                ) : (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center pointer-events-none">
+                    <span className="text-[10px] font-bold tracking-widest text-neutral-400 bg-neutral-200/60 px-1.5 py-0.5 rounded-md">
+                      ⌘K
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Right — actions */}
-            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-              {/* Mobile search */}
+            {/* 3. Right — Fluid Actions & Profile */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* Mobile search trigger */}
               <button
                 type="button"
                 onClick={() => setMobileSearchOpen(true)}
-                className="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 transition-colors"
-                aria-label="Search"
+                className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 active:scale-95 transition-all"
               >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden
-                >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <circle
                     cx="11"
                     cy="11"
@@ -1192,31 +1225,470 @@ export const Stories: React.FC = () => {
               </button>
 
               {!user ? (
-                <>
+                <div className="flex items-center gap-1 sm:gap-2">
                   <Link
                     to="/login"
-                    className="hidden sm:inline-flex text-sm font-medium text-neutral-600 hover:text-neutral-900 px-3 py-2 transition-colors"
+                    className="hidden sm:inline-flex text-[14px] font-semibold text-neutral-600 hover:text-neutral-950 px-3 py-2 transition-colors"
                   >
                     Sign in
                   </Link>
                   <Link
                     to="/register"
-                    className="inline-flex items-center h-9 px-4 rounded-full bg-neutral-900 text-white text-sm font-semibold hover:bg-neutral-800 transition-colors"
+                    className="inline-flex items-center h-9 sm:h-10 px-5 rounded-full bg-neutral-950 text-white text-[13px] sm:text-[14px] font-bold tracking-wide hover:bg-neutral-800 active:scale-95 transition-all shadow-md shadow-neutral-900/10 hover:shadow-lg hover:-translate-y-0.5"
                   >
                     Join
                   </Link>
-                </>
+                </div>
               ) : (
-                <>
-                  {/* Desktop-only secondary actions */}
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {/* Notification Icon */}
                   <Link
                     to="/notifications"
-                    className="relative hidden lg:flex w-9 h-9 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-                    aria-label="Notifications"
+                    className="relative hidden lg:flex w-10 h-10 rounded-full items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950 active:scale-95 transition-all"
                   >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M10 20a2 2 0 0 0 4 0"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <NotificationBadge count={unreadNotif} />
+                  </Link>
+
+                  {/* Messages Icon */}
+                  <Link
+                    to="/chat"
+                    className="relative hidden lg:flex w-10 h-10 rounded-full items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950 active:scale-95 transition-all"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H9l-4 3.5V6.5z"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <NotificationBadge count={unreadMsg} />
+                  </Link>
+
+                  {/* Primary CTA (Write) */}
+                  <Link
+                    to="/write"
+                    className="hidden md:inline-flex items-center h-10 gap-2 px-5 rounded-full bg-neutral-950 text-white text-[14px] font-bold tracking-wide hover:bg-neutral-800 active:scale-95 transition-all shadow-md shadow-neutral-900/10 hover:shadow-lg hover:-translate-y-0.5 ml-2"
+                  >
+                    Write
                     <svg
-                      width="18"
-                      height="18"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="opacity-80"
+                    >
+                      <path
+                        d="M5 12h14M12 5l7 7-7 7"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </Link>
+
+                  {/* Vertical Divider */}
+                  <div className="hidden lg:block w-px h-6 bg-neutral-200 mx-2" />
+
+                  {/* Profile Dropdown (Desktop) */}
+                  <div className="relative hidden lg:block">
+                    <button
+                      type="button"
+                      onClick={() => setProfileOpen((o) => !o)}
+                      className="flex items-center rounded-full ring-2 ring-transparent hover:ring-neutral-200 active:scale-95 transition-all focus:outline-none"
+                    >
+                      <Avatar
+                        src={user.image?.url}
+                        alt={user.username}
+                        size={36}
+                      />
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {profileOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          onClick={() => setProfileOpen(false)}
+                        />
+                        <div className="absolute right-0 mt-3 w-60 bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/60 py-2 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="px-5 py-3 border-b border-neutral-100/80 mb-1">
+                            <p className="text-[14px] font-bold text-neutral-900 truncate">
+                              {user.name || user.username}
+                            </p>
+                            <p className="text-[12px] font-medium text-neutral-500 truncate mt-0.5">
+                              @{user.username}
+                            </p>
+                          </div>
+
+                          <Link
+                            to={`/profile/${user.username}`}
+                            onClick={() => setProfileOpen(false)}
+                            className="flex items-center gap-3 px-5 py-2.5 text-[14px] font-medium text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 transition-colors"
+                          >
+                            Your profile
+                          </Link>
+
+                          <Link
+                            to="/settings"
+                            onClick={() => setProfileOpen(false)}
+                            className="flex items-center gap-3 px-5 py-2.5 text-[14px] font-medium text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 transition-colors"
+                          >
+                            Account settings
+                          </Link>
+
+                          <div className="border-t border-neutral-100/80 mt-1 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfileOpen(false);
+                                handleLogout();
+                              }}
+                              className="w-full text-left flex items-center gap-3 px-5 py-2.5 text-[14px] font-medium text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              Sign out
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Mobile Menu Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setMobileMenuOpen(true)}
+                    className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                  >
+                    <Avatar
+                      src={user.image?.url}
+                      alt={user.username}
+                      size={32}
+                    />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ══════════ MAIN CONTENT ══════════ */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 sm:pb-32 selection:bg-neutral-200">
+        {/* ── TOP LAYOUT: Hero -> Write -> Categories -> Writers ── */}
+        {!hasFilter && (
+          <div className="flex flex-col gap-10 sm:gap-14 mb-10 sm:mb-16">
+            {/* 1. Hero */}
+            {sidebarLoading ? (
+              <div className="w-full rounded-[20px] sm:rounded-[28px] bg-neutral-100 animate-pulse aspect-[4/3] sm:aspect-[21/9]" />
+            ) : trendingStories.length > 0 ? (
+              <TopHeroSection stories={trendingStories} />
+            ) : null}
+
+            {/* 2. Write Action */}
+            <PremiumWriteCard />
+  {/* 4. Authors */}
+            {!sidebarLoading && topWriters.length > 0 && (
+              <WritersSmallRow writers={topWriters} />
+            )}
+            {/* 3. Browse Filter */}
+            <CategoryCardsWithImages
+              active={category}
+              onSelect={handleCategorySelect}
+            />
+
+          
+          </div>
+        )}
+
+        {/* ── FEED SECTION ── */}
+        {/* ══════════ FEED CONTROL CARD ══════════ */}
+        <section
+          ref={exploreRef}
+          className={`scroll-mt-28 ${!hasFilter ? "mt-2" : ""}`}
+        >
+          <div className="relative overflow-hidden rounded-2xl sm:rounded-[20px] mb-6 sm:mb-8 border border-white/[0.06] shadow-xl">
+            {/* Base Canvas — Deep Warm Ink */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#18161a] via-[#121014] to-[#0c0b0e]" />
+
+            {/* Soft Radial Color Washes — Parchment & Warm Amber (Human / Diary Feel) */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(196,149,106,0.18),_transparent_55%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(140,110,80,0.12),_transparent_50%)] pointer-events-none" />
+
+            {/* Hairlines for Depth */}
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c4956a]/40 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+
+            {/* Card Interior */}
+            <div className="relative z-10 flex items-center justify-between gap-3 px-3.5 py-3 sm:px-5 sm:py-3.5">
+              {/* LEFT: Accent Bar + Title & Story Count */}
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Warm Gold/Amber Accent Bar */}
+                <div className="w-[3px] self-stretch min-h-[32px] rounded-full bg-gradient-to-b from-[#e8c9a0] via-[#c4956a] to-[#8b6a4a] shrink-0 opacity-90" />
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-[14px] sm:text-base font-semibold text-[#f5f0ea] tracking-tight truncate leading-tight">
+                      {hasFilter
+                        ? search
+                          ? `"${search}"`
+                          : CATEGORIES[category]?.label || "Filtered"
+                        : "All Stories"}
+                    </h2>
+
+                    {/* Compact Story Count Badge */}
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#c4956a]/15 border border-[#c4956a]/25 text-[11px] font-semibold text-[#e5c3a6] tabular-nums shrink-0">
+                      {loading ? "..." : formatCount(totalStories)}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] sm:text-[12px] text-[#a89f96] mt-0.5 truncate leading-none">
+                    {hasFilter ? "Filtered view" : "Community Stories"}
+                  </p>
+                </div>
+              </div>
+
+              {/* RIGHT: Clear Button + Sort Dropdown */}
+              <div className="flex items-center gap-2 shrink-0">
+                {hasFilter && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="h-8 sm:h-9 px-3 rounded-full text-[11px] sm:text-[12px] font-medium text-[#c4956a] bg-white/[0.05] hover:bg-white/[0.1] border border-[#c4956a]/30 transition-colors active:scale-95"
+                  >
+                    Clear
+                  </button>
+                )}
+
+                {/* Minimal Glass Sort Select */}
+                <div className="relative">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="h-8 sm:h-9 appearance-none rounded-full bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-[11px] sm:text-[12px] font-medium text-[#f5f0ea] pl-3 pr-7 outline-none cursor-pointer transition-colors"
+                  >
+                    <option
+                      value="best"
+                      className="bg-[#121014] text-[#f5f0ea]"
+                    >
+                      Top rated
+                    </option>
+                    <option
+                      value="newest"
+                      className="bg-[#121014] text-[#f5f0ea]"
+                    >
+                      Newest
+                    </option>
+                    <option
+                      value="oldest"
+                      className="bg-[#121014] text-[#f5f0ea]"
+                    >
+                      Oldest
+                    </option>
+                  </select>
+
+                  <svg
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[#a89f96]"
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <path
+                      d="M6 9l6 6 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Error State */}
+          {error && (
+            <div className="mb-6 p-2 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl bg-black/5 dark:bg-white/5 transition-all">
+              <div className="flex items-center gap-2.5 pt-2 sm:pt-0 pl-2 sm:pl-3">
+                {/* Soft indicator dot instead of a harsh warning icon */}
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400/80 shrink-0" />
+                <p className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 leading-none mt-0.5">
+                  {error}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fetchStories}
+                className="w-full sm:w-auto h-8 px-4 rounded-full bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-200 text-xs font-semibold hover:bg-black/10 dark:hover:bg-white/20 transition-all active:scale-95"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+
+          {/* Loading Skeletons */}
+          {!error && loading && (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="min-w-0">
+                  <div className="aspect-[4/5] rounded-[16px] bg-neutral-200/60 animate-pulse mb-2.5" />
+                  <div className="h-3.5 w-3/4 rounded bg-neutral-200/60 animate-pulse mb-1.5" />
+                  <div className="h-3 w-1/2 rounded bg-neutral-200/60 animate-pulse" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!error && !loading && stories.length === 0 && (
+            <PremiumEmptyState
+              search={search}
+              category={category}
+              onClear={clearFilters}
+            />
+          )}
+
+          {/* Stories Grid */}
+          {!error && !loading && stories.length > 0 && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10">
+                {stories.map((story) => (
+                  <PremiumStoryCard key={story._id} story={story} />
+                ))}
+              </div>
+
+              <div className="mt-10 sm:mt-12">
+                <PremiumPagination
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+            </>
+          )}
+        </section>
+      </main>
+
+      {/* ══════════ MOBILE BOTTOM NAV ══════════ */}
+      {user && (
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
+          {/* Soft top fade so content doesn’t collide with the bar */}
+          <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-black/[0.04] to-transparent" />
+
+          <div className="bg-[#fffdf9]/92 backdrop-blur-xl border-t border-stone-200/80 pb-[env(safe-area-inset-bottom)]">
+            <div className="max-w-md mx-auto px-2">
+              <div className="grid grid-cols-5 items-end h-[64px]">
+                {/* Home */}
+                <Link
+                  to="/"
+                  className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-[#1a1520]"
+                  aria-label="Home"
+                >
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden
+                  >
+                    <path
+                      d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  <span className="text-[10px] font-semibold tracking-wide">
+                    Home
+                  </span>
+                  <span className="absolute bottom-1 w-4 h-0.5 rounded-full bg-amber-600" />
+                </Link>
+
+                {/* Messages */}
+                <Link
+                  to="/chat"
+                  className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
+                  aria-label="Messages"
+                >
+                  <span className="relative">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden
+                    >
+                      <path
+                        d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v6A2.5 2.5 0 0 1 17.5 16H9.2L5 19.2V7.5z"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    {unreadMsg > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-amber-600 text-white text-[9px] font-bold leading-4 text-center ring-2 ring-[#fffdf9]">
+                        {unreadMsg > 99 ? "99+" : unreadMsg}
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[10px] font-medium tracking-wide">
+                    Chat
+                  </span>
+                </Link>
+
+                {/* Write — center elevated */}
+                <div className="relative flex justify-center">
+                  <Link
+                    to="/write"
+                    className="absolute -top-5 flex items-center justify-center w-[52px] h-[52px] rounded-full bg-gradient-to-br from-[#1a1520] via-[#2a2230] to-[#1a1520] text-[#f5f0ea] shadow-[0_10px_24px_-8px_rgba(26,21,32,0.55)] ring-4 ring-[#fffdf9] hover:scale-[1.04] active:scale-95 transition-transform"
+                    aria-label="Write a story"
+                  >
+                    {/* warm edge light */}
+                    <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400/25 via-transparent to-violet-400/20" />
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="relative"
+                      aria-hidden
+                    >
+                      <path
+                        d="M12 5v14M5 12h14"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </Link>
+                </div>
+
+                {/* Notifications */}
+                <Link
+                  to="/notifications"
+                  className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
+                  aria-label="Notifications"
+                >
+                  <span className="relative">
+                    <svg
+                      width="22"
+                      height="22"
                       viewBox="0 0 24 24"
                       fill="none"
                       aria-hidden
@@ -1235,353 +1707,39 @@ export const Stories: React.FC = () => {
                         strokeLinecap="round"
                       />
                     </svg>
-                    <NotificationBadge count={unreadNotif} />
-                  </Link>
-
-                  <Link
-                    to="/chat"
-                    className="relative hidden lg:flex w-9 h-9 rounded-full items-center justify-center text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors"
-                    aria-label="Messages"
-                  >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden
-                    >
-                      <path
-                        d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H9l-4 3.5V6.5z"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <NotificationBadge count={unreadMsg} />
-                  </Link>
-
-                  <Link
-                    to="/write"
-                    className="hidden md:inline-flex items-center h-9 gap-1.5 px-4 rounded-full bg-neutral-900 text-white text-sm font-semibold hover:bg-neutral-800 transition-colors ml-1"
-                  >
-                    Write
-                  </Link>
-
-                  {/* Profile — desktop */}
-                  <div className="relative hidden lg:block ml-1">
-                    <button
-                      type="button"
-                      onClick={() => setProfileOpen((o) => !o)}
-                      className="flex items-center rounded-full hover:opacity-90 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900/30"
-                      aria-label="Account menu"
-                    >
-                      <Avatar
-                        src={user.image?.url}
-                        alt={user.username}
-                        size={32}
-                      />
-                    </button>
-
-                    {profileOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setProfileOpen(false)}
-                        />
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-lg border border-neutral-200/80 py-1.5 z-20 overflow-hidden">
-                          <div className="px-4 py-3 border-b border-neutral-100">
-                            <p className="text-sm font-semibold text-neutral-900 truncate">
-                              {user.name || user.username}
-                            </p>
-                            <p className="text-xs text-neutral-500 truncate">
-                              @{user.username}
-                            </p>
-                          </div>
-                          <Link
-                            to={`/profile/${user.username}`}
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
-                          >
-                            Your profile
-                          </Link>
-                          <Link
-                            to="/settings"
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-neutral-700 hover:bg-neutral-50 transition-colors"
-                          >
-                            Settings
-                          </Link>
-                          <div className="border-t border-neutral-100 mt-1 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setProfileOpen(false);
-                                handleLogout();
-                              }}
-                              className="w-full text-left px-4 py-2.5 text-sm text-neutral-600 hover:bg-neutral-50 transition-colors"
-                            >
-                              Sign out
-                            </button>
-                          </div>
-                        </div>
-                      </>
+                    {unreadNotif > 0 && (
+                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold leading-4 text-center ring-2 ring-[#fffdf9]">
+                        {unreadNotif > 99 ? "99+" : unreadNotif}
+                      </span>
                     )}
-                  </div>
+                  </span>
+                  <span className="text-[10px] font-medium tracking-wide">
+                    Alerts
+                  </span>
+                </Link>
 
-                  {/* Mobile — open account drawer via avatar only */}
-                  <button
-                    type="button"
-                    onClick={() => setMobileMenuOpen(true)}
-                    className="lg:hidden w-9 h-9 rounded-full flex items-center justify-center hover:opacity-90 transition-opacity"
-                    aria-label="Menu"
-                  >
+                {/* Profile */}
+                <Link
+                  to={`/profile/${user.username}`}
+                  className="flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
+                  aria-label="Profile"
+                >
+                  <span className="rounded-full p-[1.5px] bg-gradient-to-br from-stone-200 to-stone-300">
                     <Avatar
                       src={user.image?.url}
                       alt={user.username}
-                      size={30}
+                      size={22}
                     />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* ══════════ MAIN CONTENT ══════════ */}
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-32 lg:pb-24">
-        {/* TOP LAYOUT: Hero -> Write Card -> Categories -> Writers */}
-        {!hasFilter && (
-          <>
-            {sidebarLoading ? (
-              <div className="w-full rounded-[24px] bg-gray-100 animate-pulse aspect-[4/5] sm:aspect-[21/9] mb-6" />
-            ) : trendingStories.length > 0 ? (
-              <TopHeroSection stories={trendingStories} />
-            ) : null}
-
-            <PremiumWriteCard />
-
-            {/* Keep category chips visible above the feed for easy filtering */}
-            <CategoryCardsWithImages
-              active={category}
-              onSelect={handleCategorySelect}
-            />
-
-            {!sidebarLoading && topWriters.length > 0 && (
-              <WritersSmallRow writers={topWriters} />
-            )}
-          </>
-        )}
-
-        {/* FEED SECTION */}
-        <section
-          ref={exploreRef}
-          className="scroll-mt-32 border-t border-gray-100 pt-8 mt-4"
-        >
-          <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-8 gap-5">
-            <div className="min-w-0">
-              <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight truncate mb-1">
-                {hasFilter
-                  ? search
-                    ? `Results for "${search}"`
-                    : `${CATEGORIES[category]?.label} Section`
-                  : "Stories"}
-              </h2>
-              <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">
-                {loading ? "Searching..." : `${totalStories} Stories found`}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-              {hasFilter && (
-                <button
-                  onClick={clearFilters}
-                  className="text-sm font-black text-gray-900 bg-gray-100 hover:bg-gray-200 px-5 py-3 rounded-full transition-colors whitespace-nowrap"
-                >
-                  Clear Filters
-                </button>
-              )}
-              <div className="relative w-full sm:w-auto min-w-[180px]">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full appearance-none text-sm font-black bg-white border-2 border-gray-100 rounded-full pl-5 pr-12 py-3 outline-none cursor-pointer text-gray-900 hover:border-gray-300 focus:border-gray-900 transition-all shadow-sm"
-                >
-                  <option value="best">Top Rated</option>
-                  <option value="newest">New</option>
-                  <option value="oldest">Old Stories</option>
-                </select>
-                <i className="ri-arrow-down-s-fill absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-lg" />
+                  </span>
+                  <span className="text-[10px] font-medium tracking-wide">
+                    Me
+                  </span>
+                </Link>
               </div>
             </div>
           </div>
-
-          {/* If there is a filter but no results, show the premium empty state */}
-          {error && (
-            <div className="py-10 text-center">
-              <p className="text-red-500 font-bold mb-4">{error}</p>
-              <button
-                onClick={fetchStories}
-                className="px-6 py-2 bg-gray-100 rounded-full font-bold"
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {!error && loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="animate-pulse flex flex-col gap-3">
-                  <div className="aspect-[4/5] bg-gray-100 rounded-[20px]" />
-                  <div className="h-4 bg-gray-100 rounded-md w-3/4 mx-1" />
-                  <div className="h-3 bg-gray-100 rounded-md w-1/2 mx-1" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!error && !loading && stories.length === 0 && (
-            <PremiumEmptyState
-              search={search}
-              category={category}
-              onClear={clearFilters}
-            />
-          )}
-
-          {!error && !loading && stories.length > 0 && (
-            <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 sm:gap-x-6 sm:gap-y-10">
-                {stories.map((story) => (
-                  <PremiumStoryCard key={story._id} story={story} />
-                ))}
-              </div>
-              <PremiumPagination
-                page={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            </>
-          )}
-        </section>
-      </main>
-
-   {/* ══════════ MOBILE BOTTOM NAV ══════════ */}
-{user && (
-  <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
-    {/* Soft top fade so content doesn’t collide with the bar */}
-    <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-black/[0.04] to-transparent" />
-
-    <div className="bg-[#fffdf9]/92 backdrop-blur-xl border-t border-stone-200/80 pb-[env(safe-area-inset-bottom)]">
-      <div className="max-w-md mx-auto px-2">
-        <div className="grid grid-cols-5 items-end h-[64px]">
-          {/* Home */}
-          <Link
-            to="/"
-            className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-[#1a1520]"
-            aria-label="Home"
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"
-                fill="currentColor"
-              />
-            </svg>
-            <span className="text-[10px] font-semibold tracking-wide">Home</span>
-            <span className="absolute bottom-1 w-4 h-0.5 rounded-full bg-amber-600" />
-          </Link>
-
-          {/* Messages */}
-          <Link
-            to="/chat"
-            className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
-            aria-label="Messages"
-          >
-            <span className="relative">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v6A2.5 2.5 0 0 1 17.5 16H9.2L5 19.2V7.5z"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {unreadMsg > 0 && (
-                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-amber-600 text-white text-[9px] font-bold leading-4 text-center ring-2 ring-[#fffdf9]">
-                  {unreadMsg > 99 ? "99+" : unreadMsg}
-                </span>
-              )}
-            </span>
-            <span className="text-[10px] font-medium tracking-wide">Chat</span>
-          </Link>
-
-          {/* Write — center elevated */}
-          <div className="relative flex justify-center">
-            <Link
-              to="/write"
-              className="absolute -top-5 flex items-center justify-center w-[52px] h-[52px] rounded-full bg-gradient-to-br from-[#1a1520] via-[#2a2230] to-[#1a1520] text-[#f5f0ea] shadow-[0_10px_24px_-8px_rgba(26,21,32,0.55)] ring-4 ring-[#fffdf9] hover:scale-[1.04] active:scale-95 transition-transform"
-              aria-label="Write a story"
-            >
-              {/* warm edge light */}
-              <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400/25 via-transparent to-violet-400/20" />
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="relative" aria-hidden>
-                <path
-                  d="M12 5v14M5 12h14"
-                  stroke="currentColor"
-                  strokeWidth="2.2"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </Link>
-          </div>
-
-          {/* Notifications */}
-          <Link
-            to="/notifications"
-            className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
-            aria-label="Notifications"
-          >
-            <span className="relative">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-                <path
-                  d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M10 20a2 2 0 0 0 4 0"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-              {unreadNotif > 0 && (
-                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold leading-4 text-center ring-2 ring-[#fffdf9]">
-                  {unreadNotif > 99 ? "99+" : unreadNotif}
-                </span>
-              )}
-            </span>
-            <span className="text-[10px] font-medium tracking-wide">Alerts</span>
-          </Link>
-
-          {/* Profile */}
-          <Link
-            to={`/profile/${user.username}`}
-            className="flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
-            aria-label="Profile"
-          >
-            <span className="rounded-full p-[1.5px] bg-gradient-to-br from-stone-200 to-stone-300">
-              <Avatar src={user.image?.url} alt={user.username} size={22} />
-            </span>
-            <span className="text-[10px] font-medium tracking-wide">Me</span>
-          </Link>
-        </div>
-      </div>
-    </div>
-  </nav>
-)}
+        </nav>
+      )}
 
       {/* ══════════ MOBILE ACCOUNT DRAWER ══════════ */}
       {mobileMenuOpen && user && (
@@ -1734,44 +1892,55 @@ export const Stories: React.FC = () => {
 
       {/* ══════════ MOBILE SEARCH & DISCOVER OVERLAY ══════════ */}
       {mobileSearchOpen && (
-        <div className="fixed inset-0 z-[60] bg-white flex flex-col lg:hidden animate-in fade-in duration-200">
-          <div className="bg-white border-b border-gray-100 shadow-sm pt-safe">
-            <div className="flex items-center gap-3 p-4">
+        <div className="fixed inset-0 z-[60] bg-[#FAFAFA] flex flex-col lg:hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+          {/* 1. Header & Search Bar (Sticky with Frosted Glass) */}
+          <div className="bg-white/80 backdrop-blur-xl border-b border-black/[0.04] pt-safe z-10 shrink-0">
+            <div className="flex items-center gap-2.5 p-4">
+              {/* Back Button - Large tap target */}
               <button
                 onClick={() => setMobileSearchOpen(false)}
-                className="w-10 h-10 flex items-center justify-center text-gray-900 bg-gray-50 hover:bg-gray-100 rounded-full shrink-0 transition-colors"
+                className="w-11 h-11 flex items-center justify-center text-neutral-600 active:bg-neutral-100 rounded-full shrink-0 transition-colors focus:outline-none"
+                aria-label="Close search"
               >
-                <i className="ri-arrow-left-line text-xl" />
+                <i className="ri-arrow-left-line text-2xl" />
               </button>
-              <div className="relative flex-1">
-                <i className="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
+
+              {/* Search Input Box */}
+              <div className="relative flex-1 group">
+                <i className="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 text-lg group-focus-within:text-neutral-900 transition-colors" />
                 <input
                   type="text"
-                  placeholder="Find stories or writers..."
+                  placeholder="Search stories or writers..."
                   autoFocus
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full pl-11 pr-12 py-3 bg-gray-50 rounded-full text-[15px] font-bold outline-none focus:bg-white focus:ring-2 focus:ring-gray-900 transition-all border border-transparent"
+                  className="w-full h-11 pl-11 pr-12 bg-neutral-100/80 rounded-full text-[15px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none focus:bg-white focus:ring-2 focus:ring-neutral-900/10 transition-all border border-transparent shadow-inner"
                 />
+
+                {/* Clear Button */}
                 {searchInput && (
                   <button
                     onClick={() => {
                       setSearchInput("");
                       setSearch("");
                     }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center bg-gray-200 rounded-full"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-neutral-200/80 hover:bg-neutral-300 text-neutral-600 rounded-full active:scale-90 transition-all"
                   >
-                    <i className="ri-close-line text-gray-600 font-bold" />
+                    <i className="ri-close-line text-base font-bold" />
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Filter category directly inside the mobile search overlay without closing it */}
-            <div className="px-4 pb-3 flex gap-2.5 overflow-x-auto no-scrollbar snap-x">
+            {/* 2. Filter Categories (Premium Pill Design) */}
+            <div className="px-4 pb-4 flex gap-2 overflow-x-auto no-scrollbar ">
               <button
                 onClick={() => setCategory("")}
-                className={`shrink-0 snap-start px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${category === "" ? "bg-gray-900 text-white shadow-md" : "bg-gray-50 text-gray-500 border border-gray-100"}`}
+                className={`shrink-0 snap-start px-5 py-2 rounded-full text-[13px] font-semibold transition-all active:scale-95 ${
+                  category === ""
+                    ? "bg-neutral-900 text-white shadow-md shadow-neutral-900/20"
+                    : "bg-white text-neutral-600 border border-neutral-200/80 hover:bg-neutral-50"
+                }`}
               >
                 All
               </button>
@@ -1781,38 +1950,55 @@ export const Stories: React.FC = () => {
                   <button
                     key={key}
                     onClick={() => setCategory(isActive ? "" : key)}
-                    className={`shrink-0 snap-start flex items-center gap-2 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all ${isActive ? "bg-gray-900 text-white shadow-md" : "bg-gray-50 text-gray-500 border border-gray-100"}`}
+                    className={`shrink-0 snap-start flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all active:scale-95 ${
+                      isActive
+                        ? "bg-neutral-900 text-white shadow-md shadow-neutral-900/20"
+                        : "bg-white text-neutral-600 border border-neutral-200/80 hover:bg-neutral-50"
+                    }`}
                   >
-                    <i className={`${cat.icon} text-[13px]`} /> {cat.label}
+                    <i
+                      className={`${cat.icon} text-[14px] ${isActive ? "text-white/80" : "text-neutral-400"}`}
+                    />
+                    {cat.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/30">
-            <div className="flex items-center justify-between mb-4 px-1">
-              <p className="text-[11px] font-black tracking-widest uppercase text-gray-400">
-                {search || category
-                  ? loading
-                    ? "Searching..."
-                    : `${stories.length} Results found`
-                  : "🔥 Trending Now"}
-              </p>
+          {/* 3. Scrollable Results Area */}
+          <div className="flex-1 overflow-y-auto px-4 pt-5 pb-safe-bottom bg-[#FAFAFA]">
+            {/* Section Status Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-[12px] font-bold tracking-[0.08em] uppercase text-neutral-400">
+                {search || category ? (
+                  loading ? (
+                    "Searching..."
+                  ) : (
+                    `${stories.length} Results`
+                  )
+                ) : (
+                  <span className="flex items-center gap-1.5">
+                    <i className="ri-fire-fill text-orange-500 text-sm" />{" "}
+                    Trending Now
+                  </span>
+                )}
+              </h3>
             </div>
 
+            {/* Results Grid */}
             {loading ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="aspect-[4/5] bg-gray-100 rounded-[20px] animate-pulse"
+                    className="aspect-[4/5] bg-neutral-200/50 rounded-[20px] animate-pulse"
                   />
                 ))}
               </div>
             ) : search || category ? (
               stories.length > 0 ? (
-                <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {stories.map((s) => (
                     <div key={s._id} onClick={() => setMobileSearchOpen(false)}>
                       <PremiumStoryCard story={s} />
@@ -1820,15 +2006,17 @@ export const Stories: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <PremiumEmptyState
-                  search={search}
-                  category={category}
-                  onClear={clearFilters}
-                />
+                <div className="mt-10">
+                  <PremiumEmptyState
+                    search={search}
+                    category={category}
+                    onClear={clearFilters}
+                  />
+                </div>
               )
             ) : (
-              // Default view if no search or category is typed in overlay
-              <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+              /* Default / Trending View */
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 pb-10">
                 {trendingStories.slice(0, 10).map((s) => (
                   <div key={s._id} onClick={() => setMobileSearchOpen(false)}>
                     <PremiumStoryCard story={s} />
