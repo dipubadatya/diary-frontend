@@ -5,16 +5,16 @@ import React, {
   useCallback,
   useRef,
 } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { useSocket } from "../../contexts/SocketContext";
 import api from "../../services/api";
 import moment from "moment";
 import DiaryLogo from "../../components/DiaryLogo";
 
-/* ══════════════════════════════════════
+/* ──────────────────────────────────────────────
    TYPES
-   ══════════════════════════════════════ */
+   ────────────────────────────────────────────── */
 interface Story {
   _id: string;
   title: string;
@@ -53,78 +53,85 @@ interface Pagination {
   hasPrevPage: boolean;
 }
 
-/* ══════════════════════════════════════
-   CONSTANTS & CONFIG
-   ══════════════════════════════════════ */
-const CATEGORIES: Record<
-  string,
-  { label: string; icon: string; image: string; color: string }
-> = {
+interface CategoryConfig {
+  label: string;
+  icon: string;
+  image: string;
+  color: string;
+  description?: string;
+  gradient?: string;
+}
+
+/* ──────────────────────────────────────────────
+   CONSTANTS
+   ────────────────────────────────────────────── */
+const CATEGORIES: Record<string, CategoryConfig> = {
   fantasy: {
     label: "Fantasy",
     icon: "ri-magic-line",
     image:
-      "https://images.unsplash.com/photo-1518709268805-4e9042af2176?auto=format&fit=crop&w=400&q=80",
+      "https://i.pinimg.com/1200x/12/a6/bb/12a6bb431be19d279d71565b093ccc18.jpg",
     color: "from-purple-900/80 to-purple-500/40",
   },
   "random-thoughts": {
     label: "Thoughts",
     icon: "ri-bubble-chart-line",
     image:
-      "https://images.unsplash.com/photo-1499209974431-9dddcece7f88?auto=format&fit=crop&w=400&q=80",
+      "https://i.pinimg.com/736x/10/49/b9/1049b9a6330162cef9be352d8040b68e.jpg",
     color: "from-amber-900/80 to-amber-500/40",
   },
   poetry: {
     label: "Poetry",
     icon: "ri-quill-pen-line",
     image:
-      "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=400&q=80",
+      "https://i.pinimg.com/1200x/0b/f0/da/0bf0dabee8e3126c0a7b831fee2d4881.jpg",
     color: "from-rose-900/80 to-rose-500/40",
   },
   letter: {
     label: "Letters",
     icon: "ri-mail-send-line",
     image:
-      "https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=400&q=80",
+      "https://i.pinimg.com/736x/a4/84/1a/a4841adebd96ea5b0392f108b71c07d0.jpg",
     color: "from-blue-900/80 to-blue-500/40",
   },
   mystery: {
     label: "Mystery",
     icon: "ri-search-eye-line",
     image:
-      "https://images.unsplash.com/photo-1509023464722-18d996393ca8?auto=format&fit=crop&w=400&q=80",
+      "https://i.pinimg.com/1200x/cc/08/55/cc08551884c332df2b9fae31b719e261.jpg",
     color: "from-slate-900/90 to-slate-600/50",
   },
   adventure: {
     label: "Adventure",
     icon: "ri-compass-3-line",
     image:
-      "https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=400&q=80",
+      "https://i.pinimg.com/736x/d1/9f/50/d19f5015be54cc5c8b45f1399774dae1.jpg",
     color: "from-emerald-900/80 to-emerald-500/40",
   },
   historical: {
     label: "Historical",
     icon: "ri-hourglass-2-line",
     image:
-      "https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=400&q=80",
+      "https://i.pinimg.com/736x/f1/a6/a6/f1a6a6d1aaa13d6f6782cece659c9468.jpg",
     color: "from-orange-900/80 to-orange-600/40",
   },
   fiction: {
     label: "Fiction",
     icon: "ri-book-open-line",
     image:
-      "https://images.unsplash.com/photo-1495640388908-05fa85288e61?auto=format&fit=crop&w=400&q=80",
+      "https://i.pinimg.com/736x/8d/b3/53/8db3530c7573c623019007da057e3df1.jpg",
     color: "from-indigo-900/80 to-indigo-500/40",
   },
 };
 
 const STORIES_PER_PAGE = 12;
+
 const AVATAR_FALLBACK =
   "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100";
 
-/* ══════════════════════════════════════
+/* ──────────────────────────────────────────────
    HELPERS
-   ══════════════════════════════════════ */
+   ────────────────────────────────────────────── */
 const formatCount = (n: number): string =>
   n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(n);
 
@@ -137,23 +144,40 @@ const getLikesCount = (story: Story): number => {
 const getViewsCount = (story: Story): number =>
   Array.isArray(story.views) ? story.views.length : 0;
 
-/* ══════════════════════════════════════
+const getTimeAgo = (timestamp: string, short = false): string => {
+  const m = moment(timestamp);
+  const sec = moment().diff(m, "seconds");
+  if (sec < 60) return short ? `${Math.max(1, sec)}s` : `${Math.max(1, sec)}s ago`;
+  const min = moment().diff(m, "minutes");
+  if (min < 60) return short ? `${min}m` : `${min}m ago`;
+  const hr = moment().diff(m, "hours");
+  if (hr < 24) return short ? `${hr}h` : `${hr}h ago`;
+  const day = moment().diff(m, "days");
+  if (day < 30) return short ? `${day}d` : `${day}d ago`;
+  const mo = moment().diff(m, "months");
+  if (mo < 12) return short ? `${mo}mo` : `${mo}mo ago`;
+  return short ? `${moment().diff(m, "years")}y` : `${moment().diff(m, "years")}y ago`;
+};
+
+/* ──────────────────────────────────────────────
    ATOMS
-   ══════════════════════════════════════ */
-function Avatar({
-  src,
-  alt,
-  size = 32,
-}: {
+   ────────────────────────────────────────────── */
+interface AvatarProps {
   src?: string;
   alt: string;
   size?: number;
-}) {
+  ring?: boolean;
+  className?: string;
+}
+
+function Avatar({ src, alt, size = 32, ring = false, className = "" }: AvatarProps) {
   return (
     <img
       src={src || AVATAR_FALLBACK}
       alt={alt}
-      className="rounded-full object-cover bg-gray-100 flex-shrink-0"
+      className={`rounded-full object-cover bg-gray-100 flex-shrink-0 ${
+        ring ? "ring-2 ring-white/30" : ""
+      } ${className}`}
       style={{ width: size, height: size, minWidth: size, minHeight: size }}
       loading="lazy"
       onError={(e) => {
@@ -172,10 +196,9 @@ function NotificationBadge({ count }: { count: number }) {
   );
 }
 
-/* ══════════════════════════════════════
-   COMPONENTS
-   ══════════════════════════════════════ */
-
+/* ──────────────────────────────────────────────
+   HERO CAROUSEL — Featured stories at top of page
+   ────────────────────────────────────────────── */
 function TopHeroSection({ stories }: { stories: Story[] }) {
   const [active, setActive] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -204,35 +227,15 @@ function TopHeroSection({ stories }: { stories: Story[] }) {
   if (heroStories.length === 0) return null;
 
   const story = heroStories[active];
-  const cat =
-    CATEGORIES[story.category] || CATEGORIES.fiction || CATEGORIES.other;
+  const cat = CATEGORIES[story.category] || CATEGORIES.fiction;
   const likes = getLikesCount(story);
   const views = getViewsCount(story);
-
-  const timeAgo = (() => {
-    const m = moment(story.timeStamp);
-    const sec = moment().diff(m, "seconds");
-    if (sec < 60) return `${Math.max(1, sec)}s ago`;
-    const min = moment().diff(m, "minutes");
-    if (min < 60) return `${min}m ago`;
-    const hr = moment().diff(m, "hours");
-    if (hr < 24) return `${hr}h ago`;
-    const day = moment().diff(m, "days");
-    if (day < 30) return `${day}d ago`;
-    const mo = moment().diff(m, "months");
-    if (mo < 12) return `${mo}mo ago`;
-    return `${moment().diff(m, "years")}y ago`;
-  })();
+  const timeAgo = getTimeAgo(story.timeStamp);
 
   return (
     <section className="relative w-full overflow-hidden rounded-2xl sm:rounded-[28px] bg-neutral-950 mb-5 sm:mb-6">
-      {/*
-        Height strategy:
-        - Mobile: fixed short banner (not tall portrait 4/5)
-        - sm+: cinematic wide crop
-      */}
       <div className="relative h-[240px] xs:h-[260px] sm:h-[340px] md:h-[400px] lg:h-[440px]">
-        {/* Image */}
+        {/* Background image or gradient */}
         {story.image?.url ? (
           <img
             key={story._id}
@@ -241,14 +244,10 @@ function TopHeroSection({ stories }: { stories: Story[] }) {
             className="absolute inset-0 w-full h-full object-cover animate-heroFade"
           />
         ) : (
-          <div
-            className={`absolute inset-0 bg-gradient-to-br ${
-              cat.color || cat.gradient || "from-neutral-800 to-neutral-950"
-            }`}
-          />
+          <div className={`absolute inset-0 bg-gradient-to-br ${cat.color}`} />
         )}
 
-        {/* Overlays — stronger on mobile bottom, side wash on desktop */}
+        {/* Dark overlays for text legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-black/10" />
         <div className="absolute inset-0 hidden sm:block bg-gradient-to-r from-black/80 via-black/35 to-transparent" />
 
@@ -267,9 +266,9 @@ function TopHeroSection({ stories }: { stories: Story[] }) {
             </span>
           </div>
 
-          {/* Title — smaller on phone so it doesn’t dominate */}
+          {/* Title */}
           <h1
-            className="text-white font-semibold tracking-tight leading-[1.15] mb-2 sm:mb-3 line-clamp-2 sm:line-clamp-2"
+            className="text-white font-semibold tracking-tight leading-[1.15] mb-2 sm:mb-3 line-clamp-2"
             style={{
               fontSize: "clamp(1.25rem, 4.2vw, 2.75rem)",
               letterSpacing: "-0.02em",
@@ -278,7 +277,7 @@ function TopHeroSection({ stories }: { stories: Story[] }) {
             {story.title}
           </h1>
 
-          {/* Author + stats */}
+          {/* Author + stats row */}
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-3 sm:mb-5">
             <Link
               to={`/profile/${story.owner.username}`}
@@ -303,20 +302,14 @@ function TopHeroSection({ stories }: { stories: Story[] }) {
             </span>
           </div>
 
-          {/* CTA + dots row */}
+          {/* CTA + carousel dots */}
           <div className="flex items-center justify-between gap-3">
             <Link
               to={`/stories/${story._id}`}
               className="inline-flex items-center gap-1.5 bg-white text-neutral-900 text-xs sm:text-sm font-semibold px-4 py-2 sm:px-5 sm:py-2.5 rounded-full hover:bg-neutral-100 transition-colors"
             >
               Read story
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden
-              >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
                   d="M5 12h14M13 6l6 6-6 6"
                   stroke="currentColor"
@@ -359,30 +352,27 @@ function TopHeroSection({ stories }: { stories: Story[] }) {
   );
 }
 
-export default function PremiumWriteCard() {
+/* ──────────────────────────────────────────────
+   WRITE CARD — Primary CTA banner
+   ────────────────────────────────────────────── */
+function PremiumWriteCard() {
   return (
     <Link
       to="/write"
       className="group relative block w-full overflow-hidden rounded-2xl sm:rounded-[24px] mb-6 sm:mb-8"
     >
-      {/* Base — Deep Electric Cobalt Canvas */}
+      {/* Layered background: base + radial washes + hairline accents */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#020826] via-[#00145a] to-[#01061c]" />
-
-      {/* Soft color wash — Sunset Coral (Top Right) & Electric Cyan (Bottom Left) */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,92,0,0.35),_transparent_55%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(0,212,255,0.22),_transparent_50%)]" />
-
-      {/* Fine top hairline — Sunset Gold Highlight */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF7A00]/60 to-transparent" />
-
-      {/* Right-side soft panel glow on larger screens */}
       <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-[#FF5C00]/12 to-transparent pointer-events-none" />
 
       <div className="relative z-10 flex items-center gap-3 sm:gap-5 px-4 py-3.5 sm:px-7 sm:py-5">
-        {/* Accent mark — Vivid Gradient Bar (Sunset Orange to Electric Cyan) */}
+        {/* Accent bar */}
         <div className="w-[3px] self-stretch min-h-[40px] rounded-full bg-gradient-to-b from-[#FF9E00] via-[#FF0055] to-[#00D4FF] opacity-95 shrink-0" />
 
-        {/* Copy */}
+        {/* Text block */}
         <div className="flex-1 min-w-0">
           <p className="hidden sm:block text-[10px] font-medium tracking-[0.2em] uppercase text-[#FF9E00] mb-1">
             New entry
@@ -395,11 +385,10 @@ export default function PremiumWriteCard() {
           </p>
         </div>
 
-        {/* CTA — Acid Lime Pop Button (Matches reference image styling) */}
+        {/* CTA pill */}
         <div className="shrink-0">
           <span className="inline-flex items-center gap-1.5 bg-[#88FF00] text-[#020826] text-xs sm:text-sm font-bold px-3.5 py-2 sm:px-5 sm:py-2.5 rounded-full group-hover:bg-[#9eff1a] group-hover:shadow-[0_0_20px_rgba(136,255,0,0.4)] transition-all shadow-sm">
             <span>Write</span>
-
             <svg
               width="14"
               height="14"
@@ -425,24 +414,23 @@ export default function PremiumWriteCard() {
   );
 }
 
-// Types (retained for TypeScript safety)
+/* ──────────────────────────────────────────────
+   CATEGORY SELECTOR — Horizontal scrollable card row
+   ────────────────────────────────────────────── */
 interface CategoryCardsProps {
   active: string;
   onSelect: (c: string) => void;
-  categories?: Record<
-    string,
-    { label: string; image: string; description?: string; color?: string }
-  >;
+  categories?: Record<string, CategoryConfig>;
 }
 
 function CategoryCardsWithImages({
   active,
   onSelect,
-  categories = CATEGORIES, // Uses your CATEGORIES object
+  categories = CATEGORIES,
 }: CategoryCardsProps) {
   return (
     <section className="mb-7 sm:mb-10">
-      {/* Header */}
+      {/* Section header */}
       <div className="flex items-center justify-between gap-3 mb-3.5 sm:mb-4">
         <div className="min-w-0">
           <h3 className="text-base sm:text-lg font-bold text-neutral-900 tracking-tight">
@@ -464,9 +452,9 @@ function CategoryCardsWithImages({
         )}
       </div>
 
-      {/* Horizontal Scroll Deck */}
-      <div className="flex gap-2.5 sm:gap-3.5 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 py-1">
-        {/* "ALL" Card — Styled as a sleek tactile trigger */}
+      {/* Scrollable card deck */}
+      <div className="flex gap-2.5 sm:gap-3.5 overflow-x-auto no-scrollbar snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 py-1">
+        {/* "All" trigger */}
         <button
           onClick={() => onSelect("")}
           type="button"
@@ -476,15 +464,12 @@ function CategoryCardsWithImages({
               : "border-neutral-200/80 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/60"
           }`}
         >
-          {/* Active subtle background glow */}
           {!active && (
             <div className="absolute inset-0 bg-gradient-to-br from-neutral-700 via-neutral-900 to-black opacity-90" />
           )}
 
           <div className="relative z-10 h-full flex flex-col items-center justify-center p-2 text-center">
-            <span className="text-xs sm:text-sm font-bold tracking-tight">
-              All
-            </span>
+            <span className="text-xs sm:text-sm font-bold tracking-tight">All</span>
             <span
               className={`text-[10px] mt-0.5 font-medium ${
                 !active ? "text-neutral-400" : "text-neutral-500"
@@ -495,7 +480,7 @@ function CategoryCardsWithImages({
           </div>
         </button>
 
-        {/* Category Cards */}
+        {/* Category cards */}
         {Object.entries(categories).map(([key, cat]) => {
           const isActive = active === key;
           return (
@@ -509,27 +494,27 @@ function CategoryCardsWithImages({
                   : "border-black/5 hover:border-black/15 shadow-sm hover:shadow-md hover:-translate-y-0.5"
               }`}
             >
-              {/* Background Image */}
+              {/* Background image */}
               <img
                 src={cat.image}
                 alt={cat.label}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ease-out"
                 loading="lazy"
               />
 
-              {/* Scrim Overlay — Guarantees 100% text readability */}
+              {/* Scrim for text legibility */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
 
-              {/* Category Color Wash (Optional accent) */}
+              {/* Category color wash */}
               {cat.color && (
                 <div
                   className={`absolute inset-0 bg-gradient-to-t ${cat.color} opacity-40 mix-blend-overlay`}
                 />
               )}
 
-              {/* Active State Checkmark Badge */}
+              {/* Active checkmark */}
               {isActive && (
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white text-neutral-950 flex items-center justify-center shadow-md animate-in fade-in zoom-in-75 duration-200">
+                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-white text-neutral-950 flex items-center justify-center shadow-md">
                   <svg
                     width="11"
                     height="11"
@@ -545,7 +530,7 @@ function CategoryCardsWithImages({
                 </div>
               )}
 
-              {/* Content Label */}
+              {/* Label */}
               <div className="relative z-10 h-full flex flex-col justify-end p-2.5 sm:p-3 text-left">
                 <span className="text-white text-[13px] sm:text-[14px] font-bold leading-tight tracking-tight drop-shadow-sm truncate">
                   {cat.label}
@@ -564,10 +549,12 @@ function CategoryCardsWithImages({
   );
 }
 
+/* ──────────────────────────────────────────────
+   WRITERS ROW — Suggested authors banners
+   ────────────────────────────────────────────── */
 function WritersSmallRow({ writers }: { writers: Writer[] }) {
   if (!writers.length) return null;
 
-  // Soft diary-safe gradients (readable, not neon-AI)
   const gradients = [
     "from-[#2a211c] via-[#4a3728] to-[#c4956a]",
     "from-[#1c1a2a] via-[#3d2a4a] to-[#8b6a9a]",
@@ -581,7 +568,7 @@ function WritersSmallRow({ writers }: { writers: Writer[] }) {
 
   return (
     <section className="mb-8 sm:mb-12">
-      {/* Header */}
+      {/* Section header */}
       <div className="flex items-end justify-between gap-3 mb-3.5 sm:mb-4">
         <div className="min-w-0">
           <h3 className="text-base sm:text-lg font-semibold text-neutral-900 tracking-tight">
@@ -600,23 +587,18 @@ function WritersSmallRow({ writers }: { writers: Writer[] }) {
         </Link>
       </div>
 
-      {/* Horizontal banners — reference layout */}
-      <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-1">
+      {/* Writer banners */}
+      <div className="flex gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-1">
         {writers.slice(0, 8).map((writer, i) => (
           <Link
             key={writer._id}
             to={`/profile/${writer.username}`}
             className="group snap-start shrink-0 relative w-[220px] sm:w-[248px] h-[104px] sm:h-[112px] rounded-2xl overflow-hidden active:scale-[0.98] transition-transform duration-200"
           >
-            {/* Gradient base */}
-            <div
-              className={`absolute inset-0 bg-gradient-to-r ${gradients[i % gradients.length]}`}
-            />
-
-            {/* Light wash for depth (no noise, no orbs) */}
+            <div className={`absolute inset-0 bg-gradient-to-r ${gradients[i % gradients.length]}`} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-white/10" />
 
-            {/* Text — left */}
+            {/* Text side */}
             <div className="relative z-10 h-full flex flex-col justify-center pl-3.5 sm:pl-4 pr-[88px] sm:pr-[96px]">
               {i < 3 && (
                 <span className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-[0.14em] text-white/70 mb-1">
@@ -630,12 +612,12 @@ function WritersSmallRow({ writers }: { writers: Writer[] }) {
                 @{writer.username}
               </p>
               <p className="text-[11px] text-white/90 mt-2 font-medium tabular-nums">
-                {formatCount(writer.followers?.length || 0)}{" "}
-                <span className="font-normal text-white/65">followers</span>
+                {formatCount(writer.storiesCount || 0)}{" "}
+                <span className="font-normal text-white/65">Stories</span>
               </p>
             </div>
 
-            {/* Photo — right, large crop like reference */}
+            {/* Photo side */}
             <div className="absolute right-0 top-0 bottom-0 w-[92px] sm:w-[100px]">
               <div className="absolute inset-0 bg-gradient-to-r from-black/25 to-transparent z-10 pointer-events-none" />
               {writer.image?.url ? (
@@ -658,26 +640,14 @@ function WritersSmallRow({ writers }: { writers: Writer[] }) {
   );
 }
 
+/* ──────────────────────────────────────────────
+   STORY CARD — Grid item
+   ────────────────────────────────────────────── */
 function PremiumStoryCard({ story }: { story: Story }) {
-  const cat =
-    CATEGORIES[story.category] || CATEGORIES.other || CATEGORIES.fiction;
+  const cat = CATEGORIES[story.category] || CATEGORIES.fiction;
   const likes = getLikesCount(story);
   const views = getViewsCount(story);
-
-  const timeAgo = (() => {
-    const m = moment(story.timeStamp);
-    const sec = moment().diff(m, "seconds");
-    if (sec < 60) return `${Math.max(1, sec)}s`;
-    const min = moment().diff(m, "minutes");
-    if (min < 60) return `${min}m`;
-    const hr = moment().diff(m, "hours");
-    if (hr < 24) return `${hr}h`;
-    const day = moment().diff(m, "days");
-    if (day < 30) return `${day}d`;
-    const mo = moment().diff(m, "months");
-    if (mo < 12) return `${mo}mo`;
-    return `${moment().diff(m, "years")}y`;
-  })();
+  const timeAgo = getTimeAgo(story.timeStamp, true);
 
   return (
     <Link
@@ -694,17 +664,13 @@ function PremiumStoryCard({ story }: { story: Story }) {
             loading="lazy"
           />
         ) : (
-          <div
-            className={`absolute inset-0 bg-gradient-to-br ${
-              cat.color || cat.gradient || "from-neutral-700 to-neutral-900"
-            }`}
-          />
+          <div className={`absolute inset-0 bg-gradient-to-br ${cat.color}`} />
         )}
 
-        {/* Soft bottom scrim — text stays readable */}
+        {/* Bottom scrim */}
         <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/65 via-black/25 to-transparent pointer-events-none" />
 
-        {/* Genre pill */}
+        {/* Category chip */}
         <span className="absolute bottom-2 left-2 max-w-[70%] truncate px-2 py-0.5 rounded-full bg-white/15 backdrop-blur-md text-[10px] font-semibold text-white tracking-wide border border-white/10">
           {cat.label}
         </span>
@@ -721,7 +687,7 @@ function PremiumStoryCard({ story }: { story: Story }) {
           {story.title}
         </h4>
 
-        {/* Author */}
+        {/* Author row */}
         <div className="flex items-center gap-1.5 mt-1.5 min-w-0">
           <Avatar
             src={story.owner?.image?.url}
@@ -733,45 +699,25 @@ function PremiumStoryCard({ story }: { story: Story }) {
           </span>
         </div>
 
-        {/* Stats — quiet, secondary */}
+        {/* Stats row */}
         <div className="flex items-center gap-2.5 mt-1.5 text-[11px] text-neutral-400 tabular-nums">
           <span className="inline-flex items-center gap-1">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden
-            >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"
                 stroke="currentColor"
                 strokeWidth="1.8"
                 strokeLinejoin="round"
               />
-              <circle
-                cx="12"
-                cy="12"
-                r="2.5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              />
+              <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.8" />
             </svg>
             {formatCount(views)}
           </span>
 
-          <span className="text-neutral-300" aria-hidden>
-            ·
-          </span>
+          <span className="text-neutral-300" aria-hidden>·</span>
 
           <span className="inline-flex items-center gap-1">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden
-            >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
               <path
                 d="M12 20s-7-4.2-9.2-8.2C1.2 8.5 3.4 5 7 5c1.6 0 3 1 3.9 2.4C11.9 6 13.4 5 15 5c3.6 0 5.8 3.5 4.2 6.8C19 15.8 12 20 12 20z"
                 stroke="currentColor"
@@ -787,6 +733,9 @@ function PremiumStoryCard({ story }: { story: Story }) {
   );
 }
 
+/* ──────────────────────────────────────────────
+   EMPTY STATE — No results or empty feed
+   ────────────────────────────────────────────── */
 function PremiumEmptyState({
   search,
   category,
@@ -797,60 +746,71 @@ function PremiumEmptyState({
   onClear: () => void;
 }) {
   const catLabel = category ? CATEGORIES[category]?.label : "";
-
-  let heading = "It's completely quiet here";
-  let subheading =
-    "Be the first to break the silence. Start writing your masterpiece today.";
+  let heading = "No stories yet";
+  let subheading = "Be the first to write something worth remembering.";
+  let badge = "Empty";
 
   if (search && category) {
-    heading = `No matches in ${catLabel}`;
-    subheading = `We couldn't find any ${catLabel} stories matching "${search}". Try adjusting your keywords.`;
+    heading = "No stories found";
+    subheading = `Nothing matched "${search}" in ${catLabel}.`;
+    badge = "Filtered";
   } else if (search) {
-    heading = `No results for "${search}"`;
-    subheading =
-      "We couldn't find anything matching your search. Check the spelling or try a broader term.";
+    heading = "No stories found";
+    subheading = `Nothing matched "${search}". Try another search.`;
+    badge = "Search";
   } else if (category) {
     heading = `No ${catLabel} stories yet`;
-    subheading = `Looks like this section is waiting for its first adventure. Will you be the one to write it?`;
+    subheading = "Be the first to share a story in this collection.";
+    badge = catLabel;
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-6 text-center bg-white rounded-[32px] border border-gray-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] my-8">
-      <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
-        <i
-          className={
-            search
-              ? "ri-search-2-line text-3xl text-gray-400"
-              : "ri-ghost-line text-3xl text-gray-400"
-          }
-        />
-      </div>
-      <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center max-w-sm mx-auto select-none">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-stone-100/80 border border-stone-200/60 text-[10px] font-bold tracking-wider text-stone-500 uppercase mb-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+        {badge}
+      </span>
+
+      <h3 className="text-base font-bold text-stone-900 tracking-tight mb-1">
         {heading}
       </h3>
-      <p className="text-gray-500 text-sm max-w-sm mx-auto mb-8 leading-relaxed">
+      <p className="text-xs text-stone-500 font-medium max-w-[270px] leading-relaxed mb-5">
         {subheading}
       </p>
 
-      {search || category ? (
-        <button
-          onClick={onClear}
-          className="bg-gray-100 text-gray-900 px-6 py-3 rounded-full text-sm font-bold hover:bg-gray-200 transition-colors shadow-sm"
-        >
-          Clear all filters
-        </button>
-      ) : (
+      <div className="flex items-center gap-2">
+        {(search || category) && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="h-8 px-3.5 rounded-full border border-stone-200/80 bg-white/80 hover:bg-stone-100 text-stone-700 text-xs font-semibold active:scale-95 transition-all shadow-xs"
+          >
+            Clear filters
+          </button>
+        )}
         <Link
           to="/write"
-          className="bg-gray-900 text-white px-8 py-3.5 rounded-full text-sm font-black hover:bg-gray-800 transition-colors shadow-lg flex items-center gap-2"
+          className="h-8 px-4 rounded-full bg-stone-900 hover:bg-stone-800 text-stone-50 text-xs font-semibold active:scale-95 transition-all inline-flex items-center gap-1.5 shadow-sm"
         >
-          <i className="ri-quill-pen-line text-lg" /> Start Writing
+          <span>Write story</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M5 12h14M12 5l7 7-7 7"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </Link>
-      )}
+      </div>
     </div>
   );
 }
 
+/* ──────────────────────────────────────────────
+   PAGINATION
+   ────────────────────────────────────────────── */
 function PremiumPagination({
   page,
   totalPages,
@@ -863,9 +823,11 @@ function PremiumPagination({
   const pages = useMemo(() => {
     const items: (number | "gap")[] = [];
     for (let i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1))
+      if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
         items.push(i);
-      else if (items[items.length - 1] !== "gap") items.push("gap");
+      } else if (items[items.length - 1] !== "gap") {
+        items.push("gap");
+      }
     }
     return items;
   }, [page, totalPages]);
@@ -873,61 +835,102 @@ function PremiumPagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-12 pb-6">
-      <button
-        onClick={() => onPageChange(page - 1)}
-        disabled={page <= 1}
-        className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 text-gray-900 hover:bg-gray-50 disabled:opacity-30 disabled:pointer-events-none transition-colors shadow-sm"
-      >
-        <i className="ri-arrow-left-s-line text-xl" />
-      </button>
-      {pages.map((item, i) =>
-        item === "gap" ? (
-          <span
-            key={`g${i}`}
-            className="w-10 h-10 flex items-center justify-center text-gray-400 font-bold"
-          >
-            ...
-          </span>
-        ) : (
-          <button
-            key={item}
-            onClick={() => onPageChange(item)}
-            className={`w-10 h-10 rounded-full text-sm font-black transition-all shadow-sm ${
-              item === page
-                ? "bg-gray-900 text-white border-transparent"
-                : "bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
-            }`}
-          >
-            {item}
-          </button>
-        ),
-      )}
-      <button
-        onClick={() => onPageChange(page + 1)}
-        disabled={page >= totalPages}
-        className="w-10 h-10 rounded-full flex items-center justify-center bg-white border border-gray-200 text-gray-900 hover:bg-gray-50 disabled:opacity-30 disabled:pointer-events-none transition-colors shadow-sm"
-      >
-        <i className="ri-arrow-right-s-line text-xl" />
-      </button>
-    </div>
+    <nav
+      aria-label="Pagination"
+      className="flex items-center justify-center my-10 select-none"
+    >
+      <div className="inline-flex items-center gap-1.5 p-1.5 bg-white rounded-full border border-neutral-100 shadow-[0_12px_36px_rgba(0,0,0,0.07),0_2px_8px_rgba(0,0,0,0.03)]">
+        {/* Previous */}
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page <= 1}
+          aria-label="Previous page"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 text-neutral-800 hover:bg-black hover:text-white disabled:opacity-25 disabled:pointer-events-none active:scale-90 transition-all duration-200"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+
+        {/* Page numbers */}
+        <div className="flex items-center gap-1 px-1">
+          {pages.map((item, i) =>
+            item === "gap" ? (
+              <span
+                key={`gap-${i}`}
+                className="w-7 h-10 flex items-center justify-center text-neutral-300 font-black text-[9px] tracking-widest"
+              >
+                •••
+              </span>
+            ) : (
+              <button
+                key={item}
+                type="button"
+                onClick={() => onPageChange(item)}
+                aria-label={`Page ${item}`}
+                aria-current={item === page ? "page" : undefined}
+                className={`relative h-10 min-w-[40px] px-3.5 rounded-full text-xs font-bold transition-all duration-200 active:scale-95 ${
+                  item === page
+                    ? "bg-black text-white shadow-md shadow-black/15"
+                    : "text-neutral-500 hover:text-black hover:bg-neutral-100"
+                }`}
+              >
+                {item}
+                {item === page && (
+                  <span className="absolute -top-0.5 right-0.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white" />
+                )}
+              </button>
+            )
+          )}
+        </div>
+
+        {/* Next */}
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages}
+          aria-label="Next page"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 text-neutral-800 hover:bg-black hover:text-white disabled:opacity-25 disabled:pointer-events-none active:scale-90 transition-all duration-200"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M9 18l6-6-6-6"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    </nav>
   );
 }
 
-/* ══════════════════════════════════════
-   MAIN PAGE
-   ══════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   MAIN PAGE — Stories
+   ══════════════════════════════════════════════ */
 export const Stories: React.FC = () => {
   const { user, logout } = useAuth();
   const { socket } = useSocket();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const exploreRef = useRef<HTMLDivElement>(null);
 
+  // Featured content state
   const [trendingStories, setTrendingStories] = useState<Story[]>([]);
   const [topWriters, setTopWriters] = useState<Writer[]>([]);
   const [sidebarLoading, setSidebarLoading] = useState(true);
 
+  // Main feed state
   const [stories, setStories] = useState<Story[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     currentPage: 1,
@@ -940,19 +943,21 @@ export const Stories: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Filter state
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [sortBy, setSortBy] = useState("best");
   const [page, setPage] = useState(1);
 
+  // UI state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [unreadNotif, setUnreadNotif] = useState(0);
   const [unreadMsg, setUnreadMsg] = useState(0);
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // Debounced search
+  /* Debounce search input */
   useEffect(() => {
     const t = setTimeout(() => {
       setSearch(searchInput);
@@ -961,10 +966,12 @@ export const Stories: React.FC = () => {
     return () => clearTimeout(t);
   }, [searchInput]);
 
+  /* Reset page when category or sort changes */
   useEffect(() => {
     setPage(1);
   }, [category, sortBy]);
 
+  /* Fetch unread counts */
   const checkBadges = useCallback(async () => {
     if (!user) return;
     try {
@@ -973,16 +980,20 @@ export const Stories: React.FC = () => {
         api.get("/chat/conversations"),
       ]);
       if (nr.data.success) setUnreadNotif(nr.data.unreadCount || 0);
-      if (cr.data.success)
+      if (cr.data.success) {
         setUnreadMsg(
           cr.data.conversations.reduce(
-            (a: number, c: any) => a + (c.unreadCount || 0),
-            0,
-          ),
+            (a: number, c: { unreadCount?: number }) => a + (c.unreadCount || 0),
+            0
+          )
         );
-    } catch {}
+      }
+    } catch {
+      // Silent fail — badges are non-critical
+    }
   }, [user]);
 
+  /* Fetch featured content (hero + writers) */
   const fetchSidebar = useCallback(async () => {
     try {
       setSidebarLoading(true);
@@ -991,7 +1002,7 @@ export const Stories: React.FC = () => {
       });
       if (res.data.success) {
         setTrendingStories(
-          res.data.topFiveStories || res.data.trendingStories || [],
+          res.data.topFiveStories || res.data.trendingStories || []
         );
         if (res.data.topFiveWriters) setTopWriters(res.data.topFiveWriters);
       }
@@ -1002,11 +1013,12 @@ export const Stories: React.FC = () => {
     }
   }, []);
 
+  /* Fetch main paginated feed */
   const fetchStories = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const params: Record<string, any> = {
+      const params: Record<string, string | number> = {
         page,
         limit: STORIES_PER_PAGE,
         sort: sortBy,
@@ -1033,10 +1045,12 @@ export const Stories: React.FC = () => {
           });
         }
       }
-    } catch (e: any) {
-      setError(
-        e.message || "We couldn't connect to the library. Please try again.",
-      );
+    } catch (e) {
+      const message =
+        e instanceof Error
+          ? e.message
+          : "We couldn't connect to the library. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -1045,15 +1059,18 @@ export const Stories: React.FC = () => {
   useEffect(() => {
     fetchSidebar();
   }, [fetchSidebar]);
+
   useEffect(() => {
     fetchStories();
   }, [fetchStories]);
+
   useEffect(() => {
     checkBadges();
     const id = setInterval(checkBadges, 15000);
     return () => clearInterval(id);
   }, [checkBadges]);
 
+  /* Socket listeners for real-time badges */
   useEffect(() => {
     if (!socket || !user) return;
     const onN = () => setUnreadNotif((p) => p + 1);
@@ -1066,9 +1083,11 @@ export const Stories: React.FC = () => {
     };
   }, [socket, user]);
 
+  /* Derived values */
   const hasFilter = !!(category || search);
   const { totalStories, totalPages } = pagination;
 
+  /* Handlers */
   const handleLogout = async () => {
     await logout();
     navigate("/login");
@@ -1107,339 +1126,313 @@ export const Stories: React.FC = () => {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
-      <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-2xl border-b border-black/[0.04] supports-[backdrop-filter]:bg-white/50 transition-colors duration-500">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="h-16 md:h-20 flex items-center justify-between gap-4 sm:gap-8">
-            {/* 1. Left — Logo & App-like Segmented Nav */}
-            <div className="flex items-center gap-6 xl:gap-8 min-w-0 shrink-0">
+      {/* ══════════════════════════════════════════
+          FLOATING HEADER
+          ══════════════════════════════════════════ */}
+      <div className="fixed top-0 inset-x-0 z-50 pt-3 sm:pt-4 px-3 sm:px-5 pointer-events-none select-none">
+        <header className="pointer-events-auto max-w-6xl mx-auto h-14 sm:h-[64px] bg-white rounded-full sm:rounded-[24px] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.12)] ring-1 ring-black/[0.04] flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-4">
+          {/* Left: logo + tabs */}
+          <div className="flex items-center gap-3 lg:gap-6 min-w-0 shrink-0">
+            <Link
+              to="/"
+              className="flex items-center shrink-0 pl-1 hover:opacity-80 transition-opacity active:scale-95"
+              aria-label="Home"
+            >
+              <DiaryLogo />
+            </Link>
+
+            {/* Desktop tabs */}
+            <nav
+              className="hidden lg:flex items-center bg-[#f4f5f7] p-1 rounded-full"
+              aria-label="Primary"
+            >
               <Link
                 to="/"
-                className="flex items-center shrink-0 hover:opacity-80 transition-opacity active:scale-95"
+                className={`px-4 py-1.5 text-[13px] font-bold rounded-full transition-colors ${
+                  location.pathname === "/"
+                    ? "text-white bg-[#111] shadow-sm"
+                    : "text-[#888] hover:text-[#111]"
+                }`}
               >
-                {/* Replace with your actual Logo component */}
-                <DiaryLogo />
+                Stories
               </Link>
-
-              {/* Segmented Control Nav (Premium Desktop look) */}
-              <nav className="hidden lg:flex items-center bg-neutral-100/80 p-1 rounded-full border border-neutral-200/50 shadow-inner">
-                <Link
-                  to="/"
-                  className="px-4 py-1.5 text-[13px] font-bold text-neutral-900 bg-white rounded-full shadow-sm ring-1 ring-black/5"
-                >
-                  Stories
-                </Link>
-                <Link
-                  to="/search"
-                  className="px-4 py-1.5 text-[13px] font-medium text-neutral-500 hover:text-neutral-900 transition-colors rounded-full hover:bg-neutral-200/50"
-                >
-                  Writers
-                </Link>
-              </nav>
-            </div>
-
-            {/* 2. Center — Command Palette Style Search */}
-            <div className="hidden md:flex flex-1 max-w-md lg:max-w-lg transition-all duration-300 group">
-              <div className="relative w-full">
-                <svg
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-neutral-900 transition-colors"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="11"
-                    cy="11"
-                    r="7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M20 20l-3-3"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-
-                <input
-                  type="text"
-                  placeholder="Search stories or writers..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full h-10 pl-10 pr-12 rounded-full bg-neutral-100/80 text-[14px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none border border-transparent focus:bg-white focus:border-neutral-200 focus:ring-4 focus:ring-neutral-900/5 transition-all duration-300"
-                />
-
-                {/* Dynamic Right Element: Clear button OR Shortcut Hint */}
-                {searchInput ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchInput("");
-                      setSearch("");
-                    }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-200/80 transition-all active:scale-90"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M6 6l12 12M18 6L6 18"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                ) : (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center pointer-events-none">
-                    <span className="text-[10px] font-bold tracking-widest text-neutral-400 bg-neutral-200/60 px-1.5 py-0.5 rounded-md">
-                      ⌘K
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 3. Right — Fluid Actions & Profile */}
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-              {/* Mobile search trigger */}
-              <button
-                type="button"
-                onClick={() => setMobileSearchOpen(true)}
-                className="md:hidden w-10 h-10 rounded-full flex items-center justify-center text-neutral-700 hover:bg-neutral-100 active:scale-95 transition-all"
+              <Link
+                to="/search"
+                className={`px-4 py-1.5 text-[13px] font-bold rounded-full transition-colors ${
+                  location.pathname.startsWith("/search")
+                    ? "text-white bg-[#111] shadow-sm"
+                    : "text-[#888] hover:text-[#111]"
+                }`}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle
-                    cx="11"
-                    cy="11"
-                    r="7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  />
-                  <path
-                    d="M20 20l-3-3"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
+                Writers
+              </Link>
+            </nav>
+          </div>
 
-              {!user ? (
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Link
-                    to="/login"
-                    className="hidden sm:inline-flex text-[14px] font-semibold text-neutral-600 hover:text-neutral-950 px-3 py-2 transition-colors"
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="inline-flex items-center h-9 sm:h-10 px-5 rounded-full bg-neutral-950 text-white text-[13px] sm:text-[14px] font-bold tracking-wide hover:bg-neutral-800 active:scale-95 transition-all shadow-md shadow-neutral-900/10 hover:shadow-lg hover:-translate-y-0.5"
-                  >
-                    Join
-                  </Link>
-                </div>
+          {/* Center: search (tablet+) */}
+          <div className="hidden md:flex flex-1 max-w-sm lg:max-w-md mx-1 sm:mx-2">
+            <div className="relative w-full flex items-center h-10 bg-[#f4f5f7] rounded-full border-2 border-transparent focus-within:border-[#111]/10 focus-within:bg-white transition-all duration-300">
+              <svg
+                className="absolute left-3.5 text-[#888] pointer-events-none"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden
+              >
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2.2" />
+                <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+
+              <input
+                type="search"
+                placeholder="Search stories..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="w-full h-full pl-10 pr-10 bg-transparent text-[13px] font-semibold text-[#111] placeholder:text-[#aaa] outline-none"
+                aria-label="Search stories"
+              />
+
+              {searchInput ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchInput("");
+                    setSearch("");
+                  }}
+                  className="absolute right-1.5 w-7 h-7 rounded-full flex items-center justify-center bg-[#e5e7eb] text-[#111] hover:bg-[#d1d5db] active:scale-90 transition-colors"
+                  aria-label="Clear search"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </button>
               ) : (
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  {/* Notification Icon */}
-                  <Link
-                    to="/notifications"
-                    className="relative hidden lg:flex w-10 h-10 rounded-full items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950 active:scale-95 transition-all"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M10 20a2 2 0 0 0 4 0"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <NotificationBadge count={unreadNotif} />
-                  </Link>
-
-                  {/* Messages Icon */}
-                  <Link
-                    to="/chat"
-                    className="relative hidden lg:flex w-10 h-10 rounded-full items-center justify-center text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950 active:scale-95 transition-all"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7A2.5 2.5 0 0 1 17.5 16H9l-4 3.5V6.5z"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <NotificationBadge count={unreadMsg} />
-                  </Link>
-
-                  {/* Primary CTA (Write) */}
-                  <Link
-                    to="/write"
-                    className="hidden md:inline-flex items-center h-10 gap-2 px-5 rounded-full bg-neutral-950 text-white text-[14px] font-bold tracking-wide hover:bg-neutral-800 active:scale-95 transition-all shadow-md shadow-neutral-900/10 hover:shadow-lg hover:-translate-y-0.5 ml-2"
-                  >
-                    Write
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="opacity-80"
-                    >
-                      <path
-                        d="M5 12h14M12 5l7 7-7 7"
-                        stroke="currentColor"
-                        strokeWidth="2.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </Link>
-
-                  {/* Vertical Divider */}
-                  <div className="hidden lg:block w-px h-6 bg-neutral-200 mx-2" />
-
-                  {/* Profile Dropdown (Desktop) */}
-                  <div className="relative hidden lg:block">
-                    <button
-                      type="button"
-                      onClick={() => setProfileOpen((o) => !o)}
-                      className="flex items-center rounded-full ring-2 ring-transparent hover:ring-neutral-200 active:scale-95 transition-all focus:outline-none"
-                    >
-                      <Avatar
-                        src={user.image?.url}
-                        alt={user.username}
-                        size={36}
-                      />
-                    </button>
-
-                    {/* Dropdown Menu */}
-                    {profileOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          onClick={() => setProfileOpen(false)}
-                        />
-                        <div className="absolute right-0 mt-3 w-60 bg-white/90 backdrop-blur-xl rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-neutral-200/60 py-2 z-20 animate-in fade-in slide-in-from-top-2 duration-200">
-                          <div className="px-5 py-3 border-b border-neutral-100/80 mb-1">
-                            <p className="text-[14px] font-bold text-neutral-900 truncate">
-                              {user.name || user.username}
-                            </p>
-                            <p className="text-[12px] font-medium text-neutral-500 truncate mt-0.5">
-                              @{user.username}
-                            </p>
-                          </div>
-
-                          <Link
-                            to={`/profile/${user.username}`}
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-3 px-5 py-2.5 text-[14px] font-medium text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 transition-colors"
-                          >
-                            Your profile
-                          </Link>
-
-                          <Link
-                            to="/settings"
-                            onClick={() => setProfileOpen(false)}
-                            className="flex items-center gap-3 px-5 py-2.5 text-[14px] font-medium text-neutral-600 hover:text-neutral-950 hover:bg-neutral-50 transition-colors"
-                          >
-                            Account settings
-                          </Link>
-
-                          <div className="border-t border-neutral-100/80 mt-1 pt-1">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setProfileOpen(false);
-                                handleLogout();
-                              }}
-                              className="w-full text-left flex items-center gap-3 px-5 py-2.5 text-[14px] font-medium text-red-600 hover:bg-red-50 transition-colors"
-                            >
-                              Sign out
-                            </button>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Mobile Menu Trigger */}
-                  <button
-                    type="button"
-                    onClick={() => setMobileMenuOpen(true)}
-                    className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-                  >
-                    <Avatar
-                      src={user.image?.url}
-                      alt={user.username}
-                      size={32}
-                    />
-                  </button>
+                <div className="absolute right-3 hidden xl:flex pointer-events-none">
+                  <span className="text-[10px] font-bold text-[#aaa] bg-white px-1.5 py-0.5 rounded-md shadow-sm">
+                    Cmd K
+                  </span>
                 </div>
               )}
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* ══════════ MAIN CONTENT ══════════ */}
+          {/* Right: actions */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Mobile search trigger */}
+            <button
+              type="button"
+              onClick={() => setMobileSearchOpen(true)}
+              className="md:hidden w-10 h-10 rounded-full bg-[#f4f5f7] flex items-center justify-center text-[#111] active:scale-95 transition-transform"
+              aria-label="Open search"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2.2" />
+                <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+            </button>
+
+            {!user ? (
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Link
+                  to="/login"
+                  className="inline-flex items-center justify-center h-9 sm:h-10 px-4 sm:px-5 rounded-full bg-[#111] text-white text-[13px] font-bold hover:bg-[#333] active:scale-95 transition-all shadow-[0_6px_16px_rgba(0,0,0,0.12)] whitespace-nowrap"
+                >
+                  Sign in
+                </Link>
+              </div>
+            ) : (
+              <>
+                {/* Messages */}
+                <Link
+                  to="/chat"
+                  className="relative hidden sm:flex w-10 h-10 rounded-full bg-[#f4f5f7] items-center justify-center text-[#111] hover:bg-[#e8e9eb] active:scale-95 transition-all"
+                  aria-label="Messages"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v6A2.5 2.5 0 0 1 17.5 16H9.2L5 19.2V7.5z"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <NotificationBadge count={unreadMsg} />
+                </Link>
+
+                {/* Notifications */}
+                <Link
+                  to="/notifications"
+                  className="relative hidden sm:flex w-10 h-10 rounded-full bg-[#f4f5f7] items-center justify-center text-[#111] hover:bg-[#e8e9eb] active:scale-95 transition-all"
+                  aria-label="Notifications"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M10 20a2 2 0 0 0 4 0"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <NotificationBadge count={unreadNotif} />
+                </Link>
+
+                {/* Write button */}
+                <Link
+                  to="/write"
+                  className="hidden md:inline-flex items-center h-10 gap-1.5 px-4 sm:px-5 rounded-full bg-[#111] text-white text-[13px] font-bold hover:bg-[#333] active:scale-95 transition-all shadow-[0_6px_16px_rgba(0,0,0,0.14)]"
+                >
+                  Write
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                </Link>
+
+                <div className="hidden lg:block w-px h-5 bg-[#e8e8e8] mx-1" aria-hidden />
+
+                {/* Desktop profile dropdown */}
+                <div className="relative hidden lg:block">
+                  <button
+                    type="button"
+                    onClick={() => setProfileOpen((open) => !open)}
+                    className="flex items-center rounded-full ring-2 ring-transparent hover:ring-[#f0f0f0] active:scale-95 transition-all focus:outline-none focus-visible:ring-[#111]/20"
+                    aria-label="Open profile menu"
+                    aria-expanded={profileOpen}
+                  >
+                    <Avatar
+                      src={user.image?.url}
+                      alt={user.username || "User"}
+                      size={36}
+                      className="rounded-full object-cover"
+                    />
+                  </button>
+
+                  {profileOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        aria-hidden
+                        onClick={() => setProfileOpen(false)}
+                      />
+                      <div
+                        className="absolute right-0 mt-3 z-20 w-56 bg-white rounded-[20px] border border-[#f0f0f0] shadow-[0_16px_40px_-8px_rgba(0,0,0,0.14)] p-1.5"
+                        role="menu"
+                      >
+                        <div className="px-3.5 py-2.5 bg-[#f6f7f9] rounded-[14px] mb-1">
+                          <p className="text-[14px] font-bold text-[#111] truncate">
+                            {user.name || user.username}
+                          </p>
+                          <p className="text-[12px] font-semibold text-[#888] truncate mt-0.5">
+                            @{user.username}
+                          </p>
+                        </div>
+
+                        <Link
+                          to={`/profile/${user.username}`}
+                          role="menuitem"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center px-3.5 py-2.5 rounded-[12px] text-[13px] font-bold text-[#555] hover:text-[#111] hover:bg-[#f4f5f7] transition-colors"
+                        >
+                          Profile
+                        </Link>
+
+                        <Link
+                          to="/settings"
+                          role="menuitem"
+                          onClick={() => setProfileOpen(false)}
+                          className="flex items-center px-3.5 py-2.5 rounded-[12px] text-[13px] font-bold text-[#555] hover:text-[#111] hover:bg-[#f4f5f7] transition-colors"
+                        >
+                          Settings
+                        </Link>
+
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setProfileOpen(false);
+                            handleLogout();
+                          }}
+                          className="w-full text-left flex items-center px-3.5 py-2.5 rounded-[12px] text-[13px] font-bold text-[#e5484d] hover:bg-[#fff1f0] transition-colors"
+                        >
+                          Sign out
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Mobile menu trigger */}
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(true)}
+                  className="lg:hidden w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                  aria-label="Open menu"
+                >
+                  <Avatar
+                    src={user.image?.url}
+                    alt={user.username || "User"}
+                    size={36}
+                    className="rounded-full object-cover"
+                  />
+                </button>
+              </>
+            )}
+          </div>
+        </header>
+      </div>
+
+      {/* Spacer for fixed header */}
+      <div className="h-[76px] sm:h-[88px] shrink-0" aria-hidden />
+
+      {/* ══════════════════════════════════════════
+          MAIN CONTENT
+          ══════════════════════════════════════════ */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 sm:pb-32 selection:bg-neutral-200">
-        {/* ── TOP LAYOUT: Hero -> Write -> Categories -> Writers ── */}
+        {/* Top layout — only when no filter active */}
         {!hasFilter && (
           <div className="flex flex-col gap-10 sm:gap-14 mb-10 sm:mb-16">
-            {/* 1. Hero */}
             {sidebarLoading ? (
               <div className="w-full rounded-[20px] sm:rounded-[28px] bg-neutral-100 animate-pulse aspect-[4/3] sm:aspect-[21/9]" />
             ) : trendingStories.length > 0 ? (
               <TopHeroSection stories={trendingStories} />
             ) : null}
 
-            {/* 2. Write Action */}
             <PremiumWriteCard />
-  {/* 4. Authors */}
+
             {!sidebarLoading && topWriters.length > 0 && (
               <WritersSmallRow writers={topWriters} />
             )}
-            {/* 3. Browse Filter */}
+
             <CategoryCardsWithImages
               active={category}
               onSelect={handleCategorySelect}
             />
-
-          
           </div>
         )}
 
-        {/* ── FEED SECTION ── */}
-        {/* ══════════ FEED CONTROL CARD ══════════ */}
+        {/* Feed section */}
         <section
           ref={exploreRef}
           className={`scroll-mt-28 ${!hasFilter ? "mt-2" : ""}`}
         >
+          {/* Feed control card */}
           <div className="relative overflow-hidden rounded-2xl sm:rounded-[20px] mb-6 sm:mb-8 border border-white/[0.06] shadow-xl">
-            {/* Base Canvas — Deep Warm Ink */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#18161a] via-[#121014] to-[#0c0b0e]" />
-
-            {/* Soft Radial Color Washes — Parchment & Warm Amber (Human / Diary Feel) */}
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(196,149,106,0.18),_transparent_55%)] pointer-events-none" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(140,110,80,0.12),_transparent_50%)] pointer-events-none" />
-
-            {/* Hairlines for Depth */}
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c4956a]/40 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
 
-            {/* Card Interior */}
             <div className="relative z-10 flex items-center justify-between gap-3 px-3.5 py-3 sm:px-5 sm:py-3.5">
-              {/* LEFT: Accent Bar + Title & Story Count */}
+              {/* Left: title + count */}
               <div className="flex items-center gap-3 min-w-0">
-                {/* Warm Gold/Amber Accent Bar */}
                 <div className="w-[3px] self-stretch min-h-[32px] rounded-full bg-gradient-to-b from-[#e8c9a0] via-[#c4956a] to-[#8b6a4a] shrink-0 opacity-90" />
 
                 <div className="min-w-0">
@@ -1452,7 +1445,6 @@ export const Stories: React.FC = () => {
                         : "All Stories"}
                     </h2>
 
-                    {/* Compact Story Count Badge */}
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#c4956a]/15 border border-[#c4956a]/25 text-[11px] font-semibold text-[#e5c3a6] tabular-nums shrink-0">
                       {loading ? "..." : formatCount(totalStories)}
                     </span>
@@ -1464,7 +1456,7 @@ export const Stories: React.FC = () => {
                 </div>
               </div>
 
-              {/* RIGHT: Clear Button + Sort Dropdown */}
+              {/* Right: clear + sort */}
               <div className="flex items-center gap-2 shrink-0">
                 {hasFilter && (
                   <button
@@ -1476,31 +1468,15 @@ export const Stories: React.FC = () => {
                   </button>
                 )}
 
-                {/* Minimal Glass Sort Select */}
                 <div className="relative">
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     className="h-8 sm:h-9 appearance-none rounded-full bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-[11px] sm:text-[12px] font-medium text-[#f5f0ea] pl-3 pr-7 outline-none cursor-pointer transition-colors"
                   >
-                    <option
-                      value="best"
-                      className="bg-[#121014] text-[#f5f0ea]"
-                    >
-                      Top rated
-                    </option>
-                    <option
-                      value="newest"
-                      className="bg-[#121014] text-[#f5f0ea]"
-                    >
-                      Newest
-                    </option>
-                    <option
-                      value="oldest"
-                      className="bg-[#121014] text-[#f5f0ea]"
-                    >
-                      Oldest
-                    </option>
+                    <option value="best" className="bg-[#121014] text-[#f5f0ea]">Top rated</option>
+                    <option value="newest" className="bg-[#121014] text-[#f5f0ea]">Newest</option>
+                    <option value="oldest" className="bg-[#121014] text-[#f5f0ea]">Oldest</option>
                   </select>
 
                   <svg
@@ -1523,13 +1499,12 @@ export const Stories: React.FC = () => {
             </div>
           </div>
 
-          {/* Error State */}
+          {/* Error state */}
           {error && (
-            <div className="mb-6 p-2 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl bg-black/5 dark:bg-white/5 transition-all">
+            <div className="mb-6 p-2 flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl bg-black/5 transition-all">
               <div className="flex items-center gap-2.5 pt-2 sm:pt-0 pl-2 sm:pl-3">
-                {/* Soft indicator dot instead of a harsh warning icon */}
                 <span className="w-1.5 h-1.5 rounded-full bg-red-400/80 shrink-0" />
-                <p className="text-[13px] font-medium text-neutral-600 dark:text-neutral-300 leading-none mt-0.5">
+                <p className="text-[13px] font-medium text-neutral-600 leading-none mt-0.5">
                   {error}
                 </p>
               </div>
@@ -1537,14 +1512,14 @@ export const Stories: React.FC = () => {
               <button
                 type="button"
                 onClick={fetchStories}
-                className="w-full sm:w-auto h-8 px-4 rounded-full bg-black/5 dark:bg-white/10 text-neutral-700 dark:text-neutral-200 text-xs font-semibold hover:bg-black/10 dark:hover:bg-white/20 transition-all active:scale-95"
+                className="w-full sm:w-auto h-8 px-4 rounded-full bg-black/5 text-neutral-700 text-xs font-semibold hover:bg-black/10 transition-all active:scale-95"
               >
                 Try again
               </button>
             </div>
           )}
 
-          {/* Loading Skeletons */}
+          {/* Loading skeletons */}
           {!error && loading && (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10">
               {Array.from({ length: 10 }).map((_, i) => (
@@ -1557,7 +1532,7 @@ export const Stories: React.FC = () => {
             </div>
           )}
 
-          {/* Empty State */}
+          {/* Empty state */}
           {!error && !loading && stories.length === 0 && (
             <PremiumEmptyState
               search={search}
@@ -1566,7 +1541,7 @@ export const Stories: React.FC = () => {
             />
           )}
 
-          {/* Stories Grid */}
+          {/* Story grid */}
           {!error && !loading && stories.length > 0 && (
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-3 gap-y-8 sm:gap-x-5 sm:gap-y-10">
@@ -1587,172 +1562,154 @@ export const Stories: React.FC = () => {
         </section>
       </main>
 
-      {/* ══════════ MOBILE BOTTOM NAV ══════════ */}
+      {/* ══════════════════════════════════════════
+          MOBILE BOTTOM NAVIGATION
+          ══════════════════════════════════════════ */}
       {user && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40">
-          {/* Soft top fade so content doesn’t collide with the bar */}
-          <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-black/[0.04] to-transparent" />
-
-          <div className="bg-[#fffdf9]/92 backdrop-blur-xl border-t border-stone-200/80 pb-[env(safe-area-inset-bottom)]">
-            <div className="max-w-md mx-auto px-2">
-              <div className="grid grid-cols-5 items-end h-[64px]">
-                {/* Home */}
-                <Link
-                  to="/"
-                  className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-[#1a1520]"
-                  aria-label="Home"
-                >
-                  <svg
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    aria-hidden
-                  >
-                    <path
-                      d="M4 10.5L12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1v-9.5z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                  <span className="text-[10px] font-semibold tracking-wide">
-                    Home
-                  </span>
-                  <span className="absolute bottom-1 w-4 h-0.5 rounded-full bg-amber-600" />
-                </Link>
-
-                {/* Messages */}
-                <Link
-                  to="/chat"
-                  className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
-                  aria-label="Messages"
-                >
-                  <span className="relative">
-                    <svg
-                      width="22"
-                      height="22"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden
-                    >
-                      <path
-                        d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v6A2.5 2.5 0 0 1 17.5 16H9.2L5 19.2V7.5z"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    {unreadMsg > 0 && (
-                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-amber-600 text-white text-[9px] font-bold leading-4 text-center ring-2 ring-[#fffdf9]">
-                        {unreadMsg > 99 ? "99+" : unreadMsg}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-[10px] font-medium tracking-wide">
-                    Chat
-                  </span>
-                </Link>
-
-                {/* Write — center elevated */}
-                <div className="relative flex justify-center">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 select-none pointer-events-none">
+          <div
+            className="pointer-events-auto px-4"
+            style={{ paddingBottom: "max(14px, env(safe-area-inset-bottom))" }}
+          >
+            <div className="max-w-md mx-auto">
+              <div className="relative bg-white/95 backdrop-blur-xl rounded-[32px] border border-[#efeef3] shadow-[0_12px_40px_rgba(45,40,70,0.10),0_4px_12px_rgba(45,40,70,0.04),inset_0_1px_0_rgba(255,255,255,0.9)]">
+                <div className="grid grid-cols-5 items-center gap-0.5 h-[68px] px-2">
+                  {/* Writers */}
                   <Link
-                    to="/write"
-                    className="absolute -top-5 flex items-center justify-center w-[52px] h-[52px] rounded-full bg-gradient-to-br from-[#1a1520] via-[#2a2230] to-[#1a1520] text-[#f5f0ea] shadow-[0_10px_24px_-8px_rgba(26,21,32,0.55)] ring-4 ring-[#fffdf9] hover:scale-[1.04] active:scale-95 transition-transform"
-                    aria-label="Write a story"
+                    to="/"
+                    className="group flex flex-col items-center justify-center gap-1 h-[56px] rounded-[22px] active:scale-[0.96] transition-all duration-200"
+                    aria-label="Writers"
                   >
-                    {/* warm edge light */}
-                    <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-400/25 via-transparent to-violet-400/20" />
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="relative"
-                      aria-hidden
+                    <span className="flex items-center justify-center w-10 h-10 rounded-[16px] bg-[#f4f2f8] text-[#2d2838] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] group-hover:bg-[#eeeaf6] transition-colors">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path
+                          d="M16 20v-1.5a4.5 4.5 0 0 0-4.5-4.5h-3A4.5 4.5 0 0 0 4 18.5V20"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                        <circle cx="10" cy="7.5" r="3.5" stroke="currentColor" strokeWidth="1.8" />
+                        <path
+                          d="M16 4.5a3.5 3.5 0 0 1 0 6.8M20 19.5v-1a4.5 4.5 0 0 0-3-4.25"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </span>
+                    <span className="text-[9px] font-semibold tracking-wide text-[#2d2838]">Writers</span>
+                  </Link>
+
+                  {/* Chat */}
+                  <Link
+                    to="/chat"
+                    className="group flex flex-col items-center justify-center gap-1 h-[56px] rounded-[22px] active:scale-[0.96] transition-all duration-200"
+                    aria-label="Messages"
+                  >
+                    <span className="relative flex items-center justify-center w-10 h-10 rounded-[16px] text-[#9b95a8] group-hover:bg-[#f4f2f8] group-hover:text-[#2d2838] transition-all">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path
+                          d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v6A2.5 2.5 0 0 1 17.5 16H9.2L5 19.2V7.5z"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      {unreadMsg > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[#f0b45a] text-white text-[8px] font-bold leading-4 text-center ring-[2.5px] ring-white shadow-[0_2px_6px_rgba(240,180,90,0.35)]">
+                          {unreadMsg > 99 ? "99+" : unreadMsg}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-[9px] font-medium tracking-wide text-[#9b95a8] group-hover:text-[#2d2838] transition-colors">
+                      Chat
+                    </span>
+                  </Link>
+
+                  {/* Write (center CTA) */}
+                  <div className="relative flex justify-center items-center h-full">
+                    <Link
+                      to="/write"
+                      className="absolute -top-5 flex items-center justify-center w-[52px] h-[52px] rounded-[20px] bg-[#2d2838] text-white shadow-[0_12px_28px_rgba(45,40,56,0.32),0_4px_10px_rgba(45,40,56,0.18)] ring-[4px] ring-white hover:scale-[1.04] active:scale-[0.95] transition-transform duration-200"
+                      aria-label="Write a story"
                     >
-                      <path
-                        d="M12 5v14M5 12h14"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
+                      <span className="absolute inset-0 rounded-[20px] bg-gradient-to-tr from-white/15 via-transparent to-transparent pointer-events-none" />
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" className="relative" aria-hidden>
+                        <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
+                      </svg>
+                    </Link>
+                  </div>
+
+                  {/* Alerts */}
+                  <Link
+                    to="/notifications"
+                    className="group flex flex-col items-center justify-center gap-1 h-[56px] rounded-[22px] active:scale-[0.96] transition-all duration-200"
+                    aria-label="Notifications"
+                  >
+                    <span className="relative flex items-center justify-center w-10 h-10 rounded-[16px] text-[#9b95a8] group-hover:bg-[#f4f2f8] group-hover:text-[#2d2838] transition-all">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path
+                          d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M10 20a2 2 0 0 0 4 0"
+                          stroke="currentColor"
+                          strokeWidth="1.8"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      {unreadNotif > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-[#ef8a8a] text-white text-[8px] font-bold leading-4 text-center ring-[2.5px] ring-white shadow-[0_2px_6px_rgba(239,138,138,0.35)]">
+                          {unreadNotif > 99 ? "99+" : unreadNotif}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-[9px] font-medium tracking-wide text-[#9b95a8] group-hover:text-[#2d2838] transition-colors">
+                      Alerts
+                    </span>
+                  </Link>
+
+                  {/* Me */}
+                  <Link
+                    to={`/profile/${user.username}`}
+                    className="group flex flex-col items-center justify-center gap-1 h-[56px] rounded-[22px] active:scale-[0.96] transition-all duration-200"
+                    aria-label="Profile"
+                  >
+                    <span className="flex items-center justify-center w-10 h-10 rounded-[16px] overflow-hidden bg-[#f4f2f8] ring-[1.5px] ring-[#ebe7f2] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                      <Avatar
+                        src={user.image?.url}
+                        alt={user.username}
+                        size={40}
+                        className="rounded-[16px] object-cover w-full h-full"
                       />
-                    </svg>
+                    </span>
+                    <span className="text-[9px] font-medium tracking-wide text-[#9b95a8] group-hover:text-[#2d2838] transition-colors">
+                      Me
+                    </span>
                   </Link>
                 </div>
-
-                {/* Notifications */}
-                <Link
-                  to="/notifications"
-                  className="relative flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
-                  aria-label="Notifications"
-                >
-                  <span className="relative">
-                    <svg
-                      width="22"
-                      height="22"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden
-                    >
-                      <path
-                        d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M10 20a2 2 0 0 0 4 0"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    {unreadNotif > 0 && (
-                      <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold leading-4 text-center ring-2 ring-[#fffdf9]">
-                        {unreadNotif > 99 ? "99+" : unreadNotif}
-                      </span>
-                    )}
-                  </span>
-                  <span className="text-[10px] font-medium tracking-wide">
-                    Alerts
-                  </span>
-                </Link>
-
-                {/* Profile */}
-                <Link
-                  to={`/profile/${user.username}`}
-                  className="flex flex-col items-center justify-center gap-0.5 py-2 text-stone-400 hover:text-[#1a1520] transition-colors"
-                  aria-label="Profile"
-                >
-                  <span className="rounded-full p-[1.5px] bg-gradient-to-br from-stone-200 to-stone-300">
-                    <Avatar
-                      src={user.image?.url}
-                      alt={user.username}
-                      size={22}
-                    />
-                  </span>
-                  <span className="text-[10px] font-medium tracking-wide">
-                    Me
-                  </span>
-                </Link>
               </div>
             </div>
           </div>
         </nav>
       )}
 
-      {/* ══════════ MOBILE ACCOUNT DRAWER ══════════ */}
+      {/* ══════════════════════════════════════════
+          MOBILE ACCOUNT DRAWER
+          ══════════════════════════════════════════ */}
       {mobileMenuOpen && user && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-[#1a1520]/40 backdrop-blur-[6px] animate-drawerFade"
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Panel */}
           <div className="absolute right-0 top-0 bottom-0 w-[min(100%,300px)] bg-[#fffdf9] shadow-2xl flex flex-col animate-drawerSlide">
-            {/* Header */}
+            {/* Drawer header */}
             <div className="relative px-5 pt-5 pb-4 border-b border-stone-200/70">
               <div className="absolute inset-0 bg-gradient-to-b from-amber-50/80 to-transparent pointer-events-none" />
               <div className="relative flex items-start justify-between gap-3">
@@ -1801,7 +1758,7 @@ export const Stories: React.FC = () => {
               </div>
             </div>
 
-            {/* Secondary links only — no Home / Chat / Notifications */}
+            {/* Drawer links */}
             <nav className="flex-1 overflow-y-auto px-3 py-4">
               <p className="px-3 mb-2 text-[10px] font-semibold tracking-[0.16em] uppercase text-stone-400">
                 Account
@@ -1832,12 +1789,8 @@ export const Stories: React.FC = () => {
                     className="flex items-center justify-between gap-3 px-3 py-3 rounded-xl text-[#1a1520] hover:bg-amber-50/70 active:bg-amber-50 transition-colors"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight">
-                        {item.label}
-                      </p>
-                      <p className="text-[11px] text-stone-500 mt-0.5">
-                        {item.hint}
-                      </p>
+                      <p className="text-sm font-semibold leading-tight">{item.label}</p>
+                      <p className="text-[11px] text-stone-500 mt-0.5">{item.hint}</p>
                     </div>
                     <svg
                       width="16"
@@ -1860,7 +1813,7 @@ export const Stories: React.FC = () => {
               </div>
             </nav>
 
-            {/* Footer */}
+            {/* Drawer footer */}
             <div className="p-4 border-t border-stone-200/70 bg-white/80">
               <button
                 type="button"
@@ -1876,89 +1829,122 @@ export const Stories: React.FC = () => {
           </div>
 
           <style>{`
-      @keyframes drawerFade {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes drawerSlide {
-        from { transform: translateX(100%); }
-        to { transform: translateX(0); }
-      }
-      .animate-drawerFade { animation: drawerFade 0.2s ease-out; }
-      .animate-drawerSlide { animation: drawerSlide 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
-    `}</style>
+            @keyframes drawerFade {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes drawerSlide {
+              from { transform: translateX(100%); }
+              to { transform: translateX(0); }
+            }
+            .animate-drawerFade { animation: drawerFade 0.2s ease-out; }
+            .animate-drawerSlide { animation: drawerSlide 0.32s cubic-bezier(0.16, 1, 0.3, 1); }
+          `}</style>
         </div>
       )}
 
-      {/* ══════════ MOBILE SEARCH & DISCOVER OVERLAY ══════════ */}
+      {/* ══════════════════════════════════════════
+          MOBILE SEARCH OVERLAY
+          ══════════════════════════════════════════ */}
       {mobileSearchOpen && (
-        <div className="fixed inset-0 z-[60] bg-[#FAFAFA] flex flex-col lg:hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
-          {/* 1. Header & Search Bar (Sticky with Frosted Glass) */}
-          <div className="bg-white/80 backdrop-blur-xl border-b border-black/[0.04] pt-safe z-10 shrink-0">
-            <div className="flex items-center gap-2.5 p-4">
-              {/* Back Button - Large tap target */}
+        <div className="fixed inset-0 z-[60] bg-[#FAFAFA] flex flex-col lg:hidden">
+          {/* Sticky header */}
+          <div
+            className="shrink-0 bg-white/90 backdrop-blur-2xl border-b border-black/[0.04] z-10"
+            style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
+          >
+            <div className="flex items-center gap-2 px-3 pb-3">
               <button
+                type="button"
                 onClick={() => setMobileSearchOpen(false)}
-                className="w-11 h-11 flex items-center justify-center text-neutral-600 active:bg-neutral-100 rounded-full shrink-0 transition-colors focus:outline-none"
+                className="w-11 h-11 flex items-center justify-center rounded-full text-neutral-700 hover:bg-neutral-100 active:scale-90 transition-all shrink-0"
                 aria-label="Close search"
               >
-                <i className="ri-arrow-left-line text-2xl" />
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path
+                    d="M15 18l-6-6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </button>
 
-              {/* Search Input Box */}
-              <div className="relative flex-1 group">
-                <i className="ri-search-line absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 text-lg group-focus-within:text-neutral-900 transition-colors" />
+              <div className="relative flex-1">
+                <svg
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                  <path d="M20 20l-3-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+
                 <input
-                  type="text"
+                  type="search"
                   placeholder="Search stories or writers..."
                   autoFocus
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className="w-full h-11 pl-11 pr-12 bg-neutral-100/80 rounded-full text-[15px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none focus:bg-white focus:ring-2 focus:ring-neutral-900/10 transition-all border border-transparent shadow-inner"
+                  className="w-full h-11 pl-10 pr-10 rounded-full bg-neutral-100 text-[15px] font-medium text-neutral-900 placeholder:text-neutral-400 outline-none border-2 border-transparent focus:bg-white focus:border-neutral-900/10 transition-all"
                 />
 
-                {/* Clear Button */}
                 {searchInput && (
                   <button
+                    type="button"
                     onClick={() => {
                       setSearchInput("");
                       setSearch("");
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-neutral-200/80 hover:bg-neutral-300 text-neutral-600 rounded-full active:scale-90 transition-all"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-neutral-200/90 text-neutral-600 flex items-center justify-center active:scale-90 transition-all"
+                    aria-label="Clear search"
                   >
-                    <i className="ri-close-line text-base font-bold" />
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* 2. Filter Categories (Premium Pill Design) */}
-            <div className="px-4 pb-4 flex gap-2 overflow-x-auto no-scrollbar ">
+            {/* Category filter pills */}
+            <div className="px-3 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
               <button
+                type="button"
                 onClick={() => setCategory("")}
-                className={`shrink-0 snap-start px-5 py-2 rounded-full text-[13px] font-semibold transition-all active:scale-95 ${
+                className={`shrink-0 h-9 px-4 rounded-full text-[13px] font-bold transition-all active:scale-95 ${
                   category === ""
-                    ? "bg-neutral-900 text-white shadow-md shadow-neutral-900/20"
-                    : "bg-white text-neutral-600 border border-neutral-200/80 hover:bg-neutral-50"
+                    ? "bg-black text-white shadow-md shadow-black/15"
+                    : "bg-white text-neutral-600 border border-neutral-200/80"
                 }`}
               >
                 All
               </button>
+
               {Object.entries(CATEGORIES).map(([key, cat]) => {
                 const isActive = category === key;
                 return (
                   <button
                     key={key}
+                    type="button"
                     onClick={() => setCategory(isActive ? "" : key)}
-                    className={`shrink-0 snap-start flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-semibold transition-all active:scale-95 ${
+                    className={`shrink-0 h-9 px-3.5 rounded-full text-[13px] font-bold inline-flex items-center gap-1.5 transition-all active:scale-95 ${
                       isActive
-                        ? "bg-neutral-900 text-white shadow-md shadow-neutral-900/20"
-                        : "bg-white text-neutral-600 border border-neutral-200/80 hover:bg-neutral-50"
+                        ? "bg-black text-white shadow-md shadow-black/15"
+                        : "bg-white text-neutral-600 border border-neutral-200/80"
                     }`}
                   >
-                    <i
-                      className={`${cat.icon} text-[14px] ${isActive ? "text-white/80" : "text-neutral-400"}`}
-                    />
+                    {cat.icon && (
+                      <i
+                        className={`${cat.icon} text-[13px] ${
+                          isActive ? "text-white/80" : "text-neutral-400"
+                        }`}
+                      />
+                    )}
                     {cat.label}
                   </button>
                 );
@@ -1966,39 +1952,50 @@ export const Stories: React.FC = () => {
             </div>
           </div>
 
-          {/* 3. Scrollable Results Area */}
-          <div className="flex-1 overflow-y-auto px-4 pt-5 pb-safe-bottom bg-[#FAFAFA]">
-            {/* Section Status Header */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[12px] font-bold tracking-[0.08em] uppercase text-neutral-400">
+          {/* Results area */}
+          <div
+            className="flex-1 overflow-y-auto overscroll-contain px-3 pt-4 bg-[#FAFAFA]"
+            style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}
+          >
+            <div className="flex items-center justify-between mb-3 px-1">
+              <h3 className="text-[11px] font-bold tracking-[0.1em] uppercase text-neutral-400 flex items-center gap-1.5">
                 {search || category ? (
                   loading ? (
-                    "Searching..."
+                    "Searching…"
                   ) : (
-                    `${stories.length} Results`
+                    `${stories.length} result${stories.length === 1 ? "" : "s"}`
                   )
                 ) : (
-                  <span className="flex items-center gap-1.5">
-                    <i className="ri-fire-fill text-orange-500 text-sm" />{" "}
-                    Trending Now
-                  </span>
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                    Trending now
+                  </>
                 )}
               </h3>
+
+              {(search || category) && !loading && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="text-[12px] font-bold text-neutral-500 hover:text-neutral-900 active:scale-95 transition-all"
+                >
+                  Clear
+                </button>
+              )}
             </div>
 
-            {/* Results Grid */}
             {loading ? (
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div
                     key={i}
-                    className="aspect-[4/5] bg-neutral-200/50 rounded-[20px] animate-pulse"
+                    className="aspect-[4/5] rounded-[20px] bg-neutral-200/60 animate-pulse"
                   />
                 ))}
               </div>
             ) : search || category ? (
               stories.length > 0 ? (
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   {stories.map((s) => (
                     <div key={s._id} onClick={() => setMobileSearchOpen(false)}>
                       <PremiumStoryCard story={s} />
@@ -2006,7 +2003,7 @@ export const Stories: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="mt-10">
+                <div className="pt-6">
                   <PremiumEmptyState
                     search={search}
                     category={category}
@@ -2015,8 +2012,7 @@ export const Stories: React.FC = () => {
                 </div>
               )
             ) : (
-              /* Default / Trending View */
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 pb-10">
+              <div className="grid grid-cols-2 gap-3">
                 {trendingStories.slice(0, 10).map((s) => (
                   <div key={s._id} onClick={() => setMobileSearchOpen(false)}>
                     <PremiumStoryCard story={s} />
@@ -2030,3 +2026,5 @@ export const Stories: React.FC = () => {
     </div>
   );
 };
+
+export default Stories;
