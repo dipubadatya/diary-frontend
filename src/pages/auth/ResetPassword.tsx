@@ -524,33 +524,6 @@ export const ResetPassword: React.FC = () => {
   );
 };
 
-/* ─── Backup Checklist Component ─── */
-const RequirementRow: React.FC<{ met: boolean; label: string }> = ({
-  met,
-  label,
-}) => (
-  <div className="flex items-center gap-2">
-    <div
-      className={`shrink-0 w-4 h-4 rounded-full flex items-center justify-center transition-all ${
-        met ? "bg-[#C6F547]" : "bg-white/10"
-      }`}
-    >
-      {met ? (
-        <Check className="w-2.5 h-2.5 text-stone-900" strokeWidth={4} />
-      ) : (
-        <X className="w-2.5 h-2.5 text-white/40" strokeWidth={3} />
-      )}
-    </div>
-    <span
-      className={`text-[12px] transition-colors ${
-        met ? "text-[#C6F547] font-semibold" : "text-white/70"
-      }`}
-    >
-      {label}
-    </span>
-  </div>
-);
-
 /* ─── Invalid Token Card ─── */
 const InvalidLinkState: React.FC = () => (
   <div className="min-h-screen relative font-sans selection:bg-stone-900 selection:text-white flex flex-col">

@@ -1097,6 +1097,15 @@ export const Write: React.FC = () => {
                   Back to writing →
                 </button>
               )}
+              {validationError.field === 'api' && (
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  className="text-[11px] font-bold text-red-700 hover:text-red-900 mt-1.5 transition-colors underline underline-offset-2"
+                >
+                  Retry publishing →
+                </button>
+              )}
             </div>
             <button
               type="button"

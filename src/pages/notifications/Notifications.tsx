@@ -18,7 +18,6 @@ import {
   Settings,
   SlidersHorizontal,
   X,
-  ArrowLeft,
   Inbox,
   Sparkles,
   AlertCircle,
@@ -892,33 +891,21 @@ export const Notifications: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-950 text-slate-900 dark:text-slate-100 font-sans pb-24">
       {/* Header + filters */}
-      <div className="max-w-2xl mx-auto px-4 pt-4 sm:pt-6">
+      <div className="max-w-5xl mx-auto px-4 pt-4 sm:pt-6">
         {/* Header card (dark gilded) */}
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-[20px] mb-6 sm:mb-8 border border-white/[0.06] shadow-xl">
-          {/* Layered background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#18161a] via-[#121014] to-[#0c0b0e]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(196,149,106,0.18),_transparent_55%)] pointer-events-none" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(140,110,80,0.12),_transparent_50%)] pointer-events-none" />
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c4956a]/40 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+        <div className=" rounded-2xl sm:rounded-[20px] mb-6 sm:mb-8 ">
+         
 
           {/* Top row: title + actions */}
           <div className="relative z-10 flex items-center justify-between gap-3 px-3.5 py-3 sm:px-5 sm:py-3.5">
             <div className="flex items-center gap-3 min-w-0">
-              <button
-                onClick={() => navigate(-1)}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-[#a89f96] hover:text-[#f5f0ea] transition-colors active:scale-95 shrink-0"
-                aria-label="Go back"
-              >
-                <ArrowLeft className="w-4 h-4" strokeWidth={2.5} />
-              </button>
+            
 
-              {/* Bronze accent bar */}
-              <div className="w-[3px] self-stretch min-h-[32px] rounded-full bg-gradient-to-b from-[#e8c9a0] via-[#c4956a] to-[#8b6a4a] shrink-0 opacity-90" />
+            
 
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-[14px] sm:text-base font-semibold text-[#f5f0ea] tracking-tight truncate leading-tight">
+                  <h1 className="text-[14px] sm:text-base font-semibold text-black ">
                     Notifications
                   </h1>
                   {unreadCount > 0 && (

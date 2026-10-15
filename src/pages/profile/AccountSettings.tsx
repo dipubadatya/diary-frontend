@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import {
-  ArrowLeft, Loader2, User, Lock, Shield,
+  Loader2, User, Lock, Shield,
   Trash2, LogOut, Check, Eye, EyeOff,
   AlertTriangle, BadgeCheck, ExternalLink,
   X, CheckCircle2, XCircle, KeyRound,
@@ -19,6 +19,7 @@ export const AccountSettings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('details');
 
   // ── Profile fields ──
+
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
@@ -298,11 +299,6 @@ export const AccountSettings: React.FC = () => {
     setActiveTab(tab);
   };
 
-  const handleBack = () => {
-    if (profileDirty && !window.confirm('You have unsaved changes. Leave anyway?')) return;
-    navigate(-1);
-  };
-
   if (!user) return null;
 
   const tabs: { key: TabKey; label: string; icon: React.FC<any> }[] = [
@@ -393,38 +389,10 @@ export const AccountSettings: React.FC = () => {
         </div>
       )}
 
-      {/* ── Top Bar ── */}
-      <div className="sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 pt-3">
-          <div className="bg-white/92 backdrop-blur-xl rounded-full shadow-[0_1px_12px_-3px_rgba(15,23,42,0.08)] border border-slate-100/80 px-4 h-[52px] flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
-              <button
-                onClick={handleBack}
-                aria-label="Go back"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 active:scale-95 transition-all"
-              >
-                <ArrowLeft className="w-[18px] h-[18px]" strokeWidth={2} />
-              </button>
-              <span className="text-[14px] font-bold tracking-tight">Settings</span>
-              {profileDirty && (
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                  Unsaved
-                </span>
-              )}
-            </div>
-            <button
-              onClick={handleLogout}
-              className="text-[12px] font-semibold text-slate-400 hover:text-[#18181B] transition-colors px-3 py-1.5 rounded-full hover:bg-slate-50 flex items-center gap-1.5"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          </div>
-        </div>
-      </div>
+
 
       {/* ── Main Content ── */}
-      <main className="max-w-2xl mx-auto px-4 py-5 pb-24">
+      <main className="max-w-[76rem]  mx-auto px-4 py-5 pb-24">
 
         {/* User info header */}
         <div className="flex items-center gap-4 mb-6">
@@ -462,11 +430,10 @@ export const AccountSettings: React.FC = () => {
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={`flex-1 min-w-fit flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold whitespace-nowrap transition-all ${
-                  isActive
+                className={`flex-1 min-w-fit flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full text-[12px] font-bold whitespace-nowrap transition-all ${isActive
                     ? 'bg-[#18181B] text-white shadow-sm'
                     : 'text-slate-400 hover:text-[#18181B] hover:bg-slate-50'
-                }`}
+                  }`}
               >
                 <tab.icon className="w-3.5 h-3.5" strokeWidth={2} />
                 <span className="hidden sm:inline">{tab.label}</span>
@@ -657,11 +624,10 @@ export const AccountSettings: React.FC = () => {
                           ].map(req => (
                             <span
                               key={req.label}
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                                req.ok
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${req.ok
                                   ? 'bg-emerald-50 text-emerald-600'
                                   : 'bg-slate-50 text-slate-300'
-                              }`}
+                                }`}
                             >
                               {req.ok
                                 ? <CheckCircle2 className="w-2.5 h-2.5" />
@@ -833,13 +799,12 @@ const Field: React.FC<{
 }> = ({ label, value, onChange, type = 'text', placeholder, prefix, maxLength, endAdornment, error, success, loading }) => (
   <div>
     <label className="text-[12px] font-semibold text-slate-500 mb-1.5 block">{label}</label>
-    <div className={`flex items-center bg-[#F4F6FB] border rounded-xl transition-colors ${
-      error
+    <div className={`flex items-center bg-[#F4F6FB] border rounded-xl transition-colors ${error
         ? 'border-rose-200 bg-rose-50/40'
         : success
-        ? 'border-emerald-200 bg-emerald-50/30'
-        : 'border-transparent focus-within:border-slate-200 focus-within:bg-white'
-    }`}>
+          ? 'border-emerald-200 bg-emerald-50/30'
+          : 'border-transparent focus-within:border-slate-200 focus-within:bg-white'
+      }`}>
       {prefix && (
         <span className="pl-3.5 text-slate-300 text-[13px] select-none">{prefix}</span>
       )}
@@ -849,9 +814,8 @@ const Field: React.FC<{
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
-        className={`flex-1 py-2.5 bg-transparent outline-none text-[13px] min-w-0 ${
-          prefix ? 'pl-0.5 pr-2' : 'px-3.5'
-        }`}
+        className={`flex-1 py-2.5 bg-transparent outline-none text-[13px] min-w-0 ${prefix ? 'pl-0.5 pr-2' : 'px-3.5'
+          }`}
       />
       <div className="pr-3 flex items-center gap-1">
         {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-300" />}

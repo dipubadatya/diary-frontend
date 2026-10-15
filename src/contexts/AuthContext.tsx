@@ -11,7 +11,7 @@ export interface UserProfile {
     filename: string;
     publicId?: string;
   };
-  banner: {
+  banner?: {
     url: string;
     filename: string;
     publicId?: string;

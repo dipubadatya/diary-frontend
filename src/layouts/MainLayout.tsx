@@ -8,6 +8,7 @@ const compactMobilePages =
   pathname === "/notifications" ||
   pathname.startsWith("/profile/") ||
   pathname.startsWith("/stories/") ||
+  pathname.startsWith("/diary/") ||
   pathname.startsWith("/search") ||
   pathname.startsWith("/write") ||
   pathname.startsWith("/chat");

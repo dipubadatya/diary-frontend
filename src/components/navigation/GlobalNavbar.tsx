@@ -12,6 +12,7 @@ export function GlobalNavbar() {
     pathname === "/notifications" ||
     pathname.startsWith("/profile/") ||
     pathname.startsWith("/stories/") ||
+    pathname.startsWith("/diary/") ||
     pathname.startsWith("/chat") ||
     pathname.startsWith("/write") ||
     pathname.startsWith("/search");

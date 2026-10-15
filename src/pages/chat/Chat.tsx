@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useCallback,
 } from 'react';
-import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSocket } from '../../contexts/SocketContext';
 import {
@@ -18,11 +18,10 @@ import {
   MessageSquare,
   Image as ImageIcon,
   X,
-  AlertCircle,
-  RefreshCw,
   Loader2,
 } from 'lucide-react';
 import api from '../../services/api';
+import { ErrorCard } from '../../components/ErrorCard';
 import moment from 'moment';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -94,28 +93,6 @@ const formatDateLabel = (time: string): string =>
 // Small, focused sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Inline error banner shown inside the UI instead of toast popups.
- * Shows an optional Retry button when a callback is provided.
- */
-const InlineError: React.FC<{
-  message: string;
-  onRetry?: () => void;
-}> = ({ message, onRetry }) => (
-  <div className="flex items-center gap-2.5 px-4 py-3 mx-3 my-2 rounded-xl bg-red-50 border border-red-200">
-    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-    <p className="flex-1 text-[12.5px] text-red-600 font-medium">{message}</p>
-    {onRetry && (
-      <button
-        onClick={onRetry}
-        className="flex items-center gap-1 text-[11.5px] font-semibold text-red-500 hover:text-red-700 transition-colors"
-      >
-        <RefreshCw className="w-3 h-3" />
-        Retry
-      </button>
-    )}
-  </div>
-);
 
 /**
  * Skeleton loader row — used while conversations are loading.
@@ -188,7 +165,6 @@ const ReadReceipt: React.FC<{ status: Message['status'] }> = ({ status }) => {
 export const Chat: React.FC = () => {
   const { user } = useAuth();
   const { socket } = useSocket();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const directUserId = searchParams.get('user');
 
@@ -267,7 +243,7 @@ export const Chat: React.FC = () => {
         if (res.data.success) {
           setMessages(res.data.messages);
 
-    
+
           setConversations((prev) =>
             prev.map((c) =>
               c.user._id === partner._id ? { ...c, unreadCount: 0 } : c
@@ -381,7 +357,7 @@ export const Chat: React.FC = () => {
         (msg.sender === activePartner._id || msg.receiver === activePartner._id);
 
       if (belongsToActiveThread) {
-      
+
         setMessages((prev) => [...prev, msg]);
 
         if (msg.sender === activePartner!._id) {
@@ -391,18 +367,18 @@ export const Chat: React.FC = () => {
           });
         }
 
-     
+
         setConversations((prev) =>
           prev.map((c) =>
             c.user._id === (msg.sender === user._id ? msg.receiver : msg.sender)
               ? {
-                  ...c,
-                  lastMessage: msg.message,
-                  lastMessageTime: msg.timeStamp,
-                  lastMessageSender: msg.sender,
-             
-                  unreadCount: 0,
-                }
+                ...c,
+                lastMessage: msg.message,
+                lastMessageTime: msg.timeStamp,
+                lastMessageSender: msg.sender,
+
+                unreadCount: 0,
+              }
               : c
           )
         );
@@ -418,12 +394,12 @@ export const Chat: React.FC = () => {
             return prev.map((c) =>
               c.user._id === threadId
                 ? {
-                    ...c,
-                    lastMessage: msg.message,
-                    lastMessageTime: msg.timeStamp,
-                    lastMessageSender: msg.sender,
-                    unreadCount: c.unreadCount + 1,
-                  }
+                  ...c,
+                  lastMessage: msg.message,
+                  lastMessageTime: msg.timeStamp,
+                  lastMessageSender: msg.sender,
+                  unreadCount: c.unreadCount + 1,
+                }
                 : c
             );
           }
@@ -582,8 +558,6 @@ export const Chat: React.FC = () => {
     setSearchParams({});
   };
 
-  const goBack = () => navigate(-1);
-
   // ─────────────────────────────────────────────────────────────────────────
   // Derived data (memoised — recalculates only when dependencies change)
   // ─────────────────────────────────────────────────────────────────────────
@@ -637,7 +611,7 @@ export const Chat: React.FC = () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="h-screen w-screen flex overflow-hidden bg-[#F2F4F7]">
+    <div className="h-full w-full flex overflow-hidden bg-[#F2F4F7]">
 
       {/* ═══════════════════════════════════════════════════════════════════
           SIDEBAR — conversation list
@@ -654,14 +628,7 @@ export const Chat: React.FC = () => {
 
           {/* Title row */}
           <div className="flex items-center gap-2 mb-4">
-            {/* Back to previous page */}
-            <button
-              onClick={goBack}
-              aria-label="Go back"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-colors flex-shrink-0"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
+
 
             <h1 className="flex-1 text-[18px] font-bold text-slate-900 tracking-tight">
               Messages
@@ -709,10 +676,9 @@ export const Chat: React.FC = () => {
                 className={`
                   flex-1 flex items-center justify-center gap-1.5
                   py-1.5 rounded-lg text-[12px] font-semibold capitalize transition-all
-                  ${
-                    activeTab === tab
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-500 hover:text-slate-700'
+                  ${activeTab === tab
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
                   }
                 `}
               >
@@ -729,14 +695,18 @@ export const Chat: React.FC = () => {
 
         {/* ── Conversation load error ─────────────────────────────────── */}
         {errorConversations && (
-          <InlineError
-            message={errorConversations}
-            onRetry={fetchConversations}
-          />
+          <div className="mx-3 my-2">
+            <ErrorCard
+              variant="banner"
+              message={errorConversations}
+              actionLabel="Retry"
+              onAction={fetchConversations}
+            />
+          </div>
         )}
 
         {/* ── Conversation list ───────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto py-2 sidebar-scroll">
+        <div className="flex-1 overflow-y-auto py-2 pb-24 lg:pb-2 sidebar-scroll">
 
           {/* Loading skeletons */}
           {isLoadingConversations && (
@@ -804,11 +774,10 @@ export const Chat: React.FC = () => {
 
                     <div className="flex items-center justify-between mt-0.5">
                       <span
-                        className={`text-[12px] truncate ${
-                          convo.unreadCount > 0
+                        className={`text-[12px] truncate ${convo.unreadCount > 0
                             ? 'text-slate-800 font-medium'
                             : 'text-slate-400'
-                        }`}
+                          }`}
                       >
                         {isMine && (
                           <span className="text-slate-400">You: </span>
@@ -893,9 +862,11 @@ export const Chat: React.FC = () => {
                 {/* Message load error */}
                 {errorMessages && (
                   <div className="mb-4">
-                    <InlineError
+                    <ErrorCard
+                      variant="banner"
                       message={errorMessages}
-                      onRetry={() => openThread(activePartner)}
+                      actionLabel="Retry"
+                      onAction={() => openThread(activePartner)}
                     />
                   </div>
                 )}
@@ -973,31 +944,27 @@ export const Chat: React.FC = () => {
                             )}
 
                             <div
-                              className={`flex flex-col max-w-[68%] ${
-                                isMine ? 'items-end' : 'items-start'
-                              }`}
+                              className={`flex flex-col max-w-[68%] ${isMine ? 'items-end' : 'items-start'
+                                }`}
                             >
                               {/* Bubble */}
                               <div
                                 className={`
                                   ${isMediaUrl(msg.message) ? 'p-0.5' : 'px-3.5 py-2.5'}
-                                  ${
-                                    isMine
-                                      ? `bg-blue-500 text-white
-                                          ${
-                                            isFirstInGroup && isLastInGroup ? 'rounded-2xl'
-                                            : isFirstInGroup ? 'rounded-2xl rounded-br-md'
-                                            : isLastInGroup ? 'rounded-2xl rounded-tr-md'
-                                            : 'rounded-l-2xl rounded-r-md'
-                                          }`
-                                      : `bg-white text-slate-800
+                                  ${isMine
+                                    ? `bg-blue-500 text-white
+                                          ${isFirstInGroup && isLastInGroup ? 'rounded-2xl'
+                                      : isFirstInGroup ? 'rounded-2xl rounded-br-md'
+                                        : isLastInGroup ? 'rounded-2xl rounded-tr-md'
+                                          : 'rounded-l-2xl rounded-r-md'
+                                    }`
+                                    : `bg-white text-slate-800
                                           border border-slate-200
-                                          ${
-                                            isFirstInGroup && isLastInGroup ? 'rounded-2xl'
-                                            : isFirstInGroup ? 'rounded-2xl rounded-bl-md'
-                                            : isLastInGroup ? 'rounded-2xl rounded-tl-md'
-                                            : 'rounded-r-2xl rounded-l-md'
-                                          }`
+                                          ${isFirstInGroup && isLastInGroup ? 'rounded-2xl'
+                                      : isFirstInGroup ? 'rounded-2xl rounded-bl-md'
+                                        : isLastInGroup ? 'rounded-2xl rounded-tl-md'
+                                          : 'rounded-r-2xl rounded-l-md'
+                                    }`
                                   }
                                 `}
                               >
@@ -1018,9 +985,8 @@ export const Chat: React.FC = () => {
                               {/* Timestamp + read receipt (last bubble only) */}
                               {isLastInGroup && (
                                 <div
-                                  className={`flex items-center gap-1 mt-1 ${
-                                    isMine ? 'flex-row-reverse' : ''
-                                  }`}
+                                  className={`flex items-center gap-1 mt-1 ${isMine ? 'flex-row-reverse' : ''
+                                    }`}
                                 >
                                   <span className="text-[10px] text-slate-400">
                                     {moment(msg.timeStamp).format('h:mm A')}
@@ -1099,7 +1065,10 @@ export const Chat: React.FC = () => {
 
                   {/* GIF error */}
                   {errorGif && (
-                    <InlineError message={errorGif} onRetry={searchGifs} />
+                    <div className="p-2 rounded-xl bg-rose-50 text-rose-600 text-xs flex items-center justify-between">
+                      <span>{errorGif}</span>
+                      <button onClick={searchGifs} className="font-semibold underline ml-2">Retry</button>
+                    </div>
                   )}
 
                   {/* GIF grid */}
@@ -1129,7 +1098,7 @@ export const Chat: React.FC = () => {
             )}
 
             {/* ── Message input bar ────────────────────────────────────── */}
-            <footer className="flex-shrink-0 bg-white border-t border-slate-200 px-4 sm:px-5 py-3">
+            <footer className="flex-shrink-0 bg-white border-t border-slate-200 px-4 sm:px-5 py-3 mb-20 lg:mb-0">
               <div className="max-w-[680px] mx-auto flex items-center gap-2">
 
                 {/* GIF picker toggle */}
@@ -1139,10 +1108,9 @@ export const Chat: React.FC = () => {
                   aria-label="Open GIF picker"
                   className={`
                     w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors
-                    ${
-                      isGifOpen
-                        ? 'text-blue-500 bg-blue-50'
-                        : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+                    ${isGifOpen
+                      ? 'text-blue-500 bg-blue-50'
+                      : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
                     }
                   `}
                 >
@@ -1174,10 +1142,9 @@ export const Chat: React.FC = () => {
                   aria-label="Send message"
                   className={`
                     w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-all
-                    ${
-                      inputText.trim()
-                        ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:scale-105 active:scale-95'
-                        : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                    ${inputText.trim()
+                      ? 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm hover:scale-105 active:scale-95'
+                      : 'bg-slate-100 text-slate-300 cursor-not-allowed'
                     }
                   `}
                 >

@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Search as SearchIcon,
   X,
-  ArrowLeft,
   UserPlus,
   UserCheck,
   Loader2,
@@ -400,19 +399,7 @@ export const Search: React.FC = () => {
 
         {/* Header */}
         <header className="flex items-center gap-4 mb-6 sm:mb-8">
-          <button
-            onClick={() => navigate(-1)}
-            aria-label="Go back"
-            className="
-              w-12 h-12 rounded-full flex items-center justify-center
-              bg-white dark:bg-[#1A1A1A] text-[#121212] dark:text-white
-              border border-neutral-100 dark:border-[#2A2A2A]
-              shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_16px_rgba(0,0,0,0.08)] 
-              hover:-translate-y-[0.5px] active:scale-[0.97] transition-all duration-300
-            "
-          >
-            <ArrowLeft className="w-5 h-5" strokeWidth={2.2} />
-          </button>
+
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#121212] dark:text-white">
               Discover

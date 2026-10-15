@@ -10,7 +10,6 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import Cropper from "cropperjs";
 import "cropperjs/dist/cropper.css";
 import {
-  ArrowLeft,
   Settings,
   MessageCircle,
   Camera,
@@ -100,11 +99,20 @@ const ACCEPTED_IMAGE_TYPES = [
 const PROFILE_FILTERS = [
   { name: "Original", value: "none" },
   { name: "Classic", value: "contrast(130%) brightness(100%) saturate(120%)" },
-  { name: "Cinema", value: "contrast(150%) saturate(100%) brightness(90%) sepia(20%)" },
-  { name: "Golden", value: "hue-rotate(60deg) saturate(120%) brightness(110%)" },
+  {
+    name: "Cinema",
+    value: "contrast(150%) saturate(100%) brightness(90%) sepia(20%)",
+  },
+  {
+    name: "Golden",
+    value: "hue-rotate(60deg) saturate(120%) brightness(110%)",
+  },
   { name: "Noir", value: "grayscale(100%) contrast(180%) brightness(75%)" },
   { name: "Moody", value: "contrast(150%) brightness(80%) saturate(140%)" },
-  { name: "Warmth", value: "sepia(40%) saturate(130%) contrast(110%) brightness(100%)" },
+  {
+    name: "Warmth",
+    value: "sepia(40%) saturate(130%) contrast(110%) brightness(100%)",
+  },
   { name: "Cool", value: "hue-rotate(210deg) brightness(95%) saturate(140%)" },
   { name: "Retro", value: "grayscale(60%) sepia(50%) contrast(120%)" },
   { name: "Vivid", value: "contrast(140%) brightness(140%) saturate(130%)" },
@@ -164,19 +172,19 @@ const formatBytes = (bytes: number): string => {
 
 const avatarUrl = (name: string): string =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    name
+    name,
   )}&background=f1f5f9&color=475569&bold=true&size=200`;
 
 const validateImageFile = (
   file: File,
   maxBytes: number,
-  allowGif = false
+  allowGif = false,
 ): string | null => {
   const allowed = allowGif
     ? ACCEPTED_IMAGE_TYPES
     : ACCEPTED_IMAGE_TYPES.filter((t) => t !== "image/gif");
 
-  if (!allowed.includes(file.type as (typeof ACCEPTED_IMAGE_TYPES)[number])) {
+  if (!(allowed as readonly string[]).includes(file.type)) {
     return allowGif
       ? "Invalid file type. Please choose a JPG, PNG, WEBP, or GIF image."
       : "Invalid file type. Please choose a JPG, PNG, or WEBP image.";
@@ -192,14 +200,14 @@ const validateImageFile = (
 const canvasToBlob = (
   canvas: HTMLCanvasElement,
   type = "image/jpeg",
-  quality = 0.88
+  quality = 0.88,
 ): Promise<Blob> =>
   new Promise((resolve, reject) =>
     canvas.toBlob(
       (blob) => (blob ? resolve(blob) : reject(new Error("Canvas is empty"))),
       type,
-      quality
-    )
+      quality,
+    ),
   );
 
 const extractUploadError = (err: any, maxMB: number): string => {
@@ -229,7 +237,10 @@ const InlineAlert: React.FC<{
 
   if (!alert) return null;
 
-  const styles: Record<AlertType, { bg: string; icon: React.ReactNode; text: string }> = {
+  const styles: Record<
+    AlertType,
+    { bg: string; icon: React.ReactNode; text: string }
+  > = {
     success: {
       bg: "bg-emerald-50 border-emerald-200",
       icon: <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />,
@@ -250,9 +261,13 @@ const InlineAlert: React.FC<{
   const cfg = styles[alert.type];
 
   return (
-    <div className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border ${cfg.bg} mb-3 animate-fadeIn`}>
+    <div
+      className={`flex items-center gap-2.5 px-4 py-3 rounded-2xl border ${cfg.bg} mb-3 animate-fadeIn`}
+    >
       {cfg.icon}
-      <p className={`text-[13px] font-medium flex-1 ${cfg.text}`}>{alert.message}</p>
+      <p className={`text-[13px] font-medium flex-1 ${cfg.text}`}>
+        {alert.message}
+      </p>
       <button
         onClick={onDismiss}
         className="opacity-40 hover:opacity-70 transition-opacity ml-1"
@@ -268,13 +283,21 @@ const FieldError: React.FC<{ message: string | null }> = ({ message }) => {
   if (!message) return null;
   return (
     <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3.5 py-3">
-      <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
-      <p className="text-[12.5px] text-red-600 font-medium leading-relaxed">{message}</p>
+      <AlertCircle
+        className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5"
+        strokeWidth={2}
+      />
+      <p className="text-[12.5px] text-red-600 font-medium leading-relaxed">
+        {message}
+      </p>
     </div>
   );
 };
 
-const SizeHint: React.FC<{ mb: number; formats: string }> = ({ mb, formats }) => (
+const SizeHint: React.FC<{ mb: number; formats: string }> = ({
+  mb,
+  formats,
+}) => (
   <p className="text-[10.5px] text-gray-400 text-center">
     Max file size: <span className="font-semibold">{mb}MB</span> · {formats}
   </p>
@@ -324,40 +347,50 @@ const BottomSheetModal: React.FC<{
   maxW?: string;
   headerExtra?: React.ReactNode;
   className?: string;
-}> = ({ title, onClose, children, maxW = "max-w-md", headerExtra, className = "" }) => (
-  <div
-    className={`fixed inset-0 z-[110] flex items-end sm:items-center justify-center ${className}`}
-    style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
-    onClick={(e) => e.target === e.currentTarget && onClose()}
-  >
+}> = ({
+  title,
+  onClose,
+  children,
+  maxW = "max-w-md",
+  headerExtra,
+  className = "",
+}) => (
     <div
-      className={`bg-white w-full ${maxW} sm:rounded-2xl rounded-t-2xl overflow-hidden shadow-xl border border-gray-100 animate-slideUp`}
+      className={`fixed inset-0 z-[110] flex items-end sm:items-center justify-center ${className}`}
+      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
+      onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 className="text-[14px] font-bold text-gray-900">{title}</h2>
-        <div className="flex items-center gap-2">
-          {headerExtra}
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors"
-            aria-label="Close"
-          >
-            <X className="w-4 h-4" strokeWidth={2.5} />
-          </button>
+      <div
+        className={`bg-white w-full ${maxW} sm:rounded-2xl rounded-t-2xl overflow-hidden shadow-xl border border-gray-100 animate-slideUp`}
+      >
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h2 className="text-[14px] font-bold text-gray-900">{title}</h2>
+          <div className="flex items-center gap-2">
+            {headerExtra}
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
+        <div className="w-8 h-1 rounded-full bg-gray-200 mx-auto mt-2 sm:hidden" />
+        {children}
       </div>
-      <div className="w-8 h-1 rounded-full bg-gray-200 mx-auto mt-2 sm:hidden" />
-      {children}
     </div>
-  </div>
-);
+  );
 
 const GridStoryCard: React.FC<{ story: Story }> = ({ story }) => (
   <Link
     to={`/stories/${story._id}`}
     className="group block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 active:scale-[0.98]"
   >
-    <div className="relative w-full bg-gray-100 overflow-hidden" style={{ aspectRatio: "4/3" }}>
+    <div
+      className="relative w-full bg-gray-100 overflow-hidden"
+      style={{ aspectRatio: "4/3" }}
+    >
       {story.image?.url ? (
         <img
           src={story.image.url}
@@ -381,7 +414,9 @@ const GridStoryCard: React.FC<{ story: Story }> = ({ story }) => (
         {story.title}
       </h3>
       <div className="flex items-center justify-between">
-        <span className="text-[10px] text-gray-400">{timeAgo(story.timeStamp)}</span>
+        <span className="text-[10px] text-gray-400">
+          {timeAgo(story.timeStamp)}
+        </span>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
             <Eye className="w-3 h-3" strokeWidth={1.8} />
@@ -424,7 +459,9 @@ const ListStoryCard: React.FC<{ story: Story }> = ({ story }) => (
           </span>
         )}
         <span className="text-[9px] text-gray-300">·</span>
-        <span className="text-[10px] text-gray-400">{timeAgo(story.timeStamp)}</span>
+        <span className="text-[10px] text-gray-400">
+          {timeAgo(story.timeStamp)}
+        </span>
       </div>
       <h3 className="text-[13px] font-bold text-gray-900 line-clamp-2 leading-snug mb-2 group-hover:text-gray-600 transition-colors">
         {story.title}
@@ -484,7 +521,10 @@ export const Profile: React.FC = () => {
   const [profileFilter, setProfileFilter] = useState("none");
   const [profileEditError, setProfileEditError] = useState<string | null>(null);
   const [profileHasImage, setProfileHasImage] = useState(false);
-  const [profileFileInfo, setProfileFileInfo] = useState<{ name: string; size: string } | null>(null);
+  const [profileFileInfo, setProfileFileInfo] = useState<{
+    name: string;
+    size: string;
+  } | null>(null);
   const profilePreviewRef = useRef<HTMLImageElement>(null);
   const profileInputRef = useRef<HTMLInputElement>(null);
   const profileCropperRef = useRef<Cropper | null>(null);
@@ -497,8 +537,13 @@ export const Profile: React.FC = () => {
   const [bannerEditError, setBannerEditError] = useState<string | null>(null);
   const [bannerIsGif, setBannerIsGif] = useState(false);
   const [bannerGifFile, setBannerGifFile] = useState<File | null>(null);
-  const [bannerGifPreviewUrl, setBannerGifPreviewUrl] = useState<string | null>(null);
-  const [bannerFileInfo, setBannerFileInfo] = useState<{ name: string; size: string } | null>(null);
+  const [bannerGifPreviewUrl, setBannerGifPreviewUrl] = useState<string | null>(
+    null,
+  );
+  const [bannerFileInfo, setBannerFileInfo] = useState<{
+    name: string;
+    size: string;
+  } | null>(null);
   const bannerPreviewRef = useRef<HTMLImageElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const bannerCropperRef = useRef<Cropper | null>(null);
@@ -510,12 +555,12 @@ export const Profile: React.FC = () => {
 
   const totalViews = useMemo(
     () => stories.reduce((sum, s) => sum + (s.views?.length || 0), 0),
-    [stories]
+    [stories],
   );
 
   const totalLikes = useMemo(
     () => stories.reduce((sum, s) => sum + (s.likedBy?.length || 0), 0),
-    [stories]
+    [stories],
   );
 
   const showAlert = useCallback((type: AlertType, message: string) => {
@@ -558,7 +603,8 @@ export const Profile: React.FC = () => {
       const msg =
         err?.response?.status === 404
           ? "This user does not exist."
-          : err?.response?.data?.error || "Something went wrong loading this profile.";
+          : err?.response?.data?.error ||
+          "Something went wrong loading this profile.";
       setPageError(msg);
     } finally {
       setLoading(false);
@@ -583,10 +629,12 @@ export const Profile: React.FC = () => {
     setProfile((p) =>
       p
         ? {
-            ...p,
-            followersCount: prevFollowing ? p.followersCount - 1 : p.followersCount + 1,
-          }
-        : null
+          ...p,
+          followersCount: prevFollowing
+            ? p.followersCount - 1
+            : p.followersCount + 1,
+        }
+        : null,
     );
 
     try {
@@ -594,13 +642,15 @@ export const Profile: React.FC = () => {
       if (!res.data.success) throw new Error("Follow request failed");
 
       setIsFollowing(res.data.isFollowing);
-      setProfile((p) => (p ? { ...p, followersCount: res.data.followersCount } : null));
+      setProfile((p) =>
+        p ? { ...p, followersCount: res.data.followersCount } : null,
+      );
 
       showAlert(
         "success",
         res.data.isFollowing
           ? `You're now following @${profile.username}`
-          : `Unfollowed @${profile.username}`
+          : `Unfollowed @${profile.username}`,
       );
     } catch {
       // Rollback
@@ -736,7 +786,7 @@ export const Profile: React.FC = () => {
 
       if (blob.size > MAX_PROFILE_BYTES) {
         setProfileEditError(
-          `Processed image is ${formatBytes(blob.size)}, which exceeds the ${MAX_PROFILE_IMAGE_MB}MB limit. Try a smaller source image.`
+          `Processed image is ${formatBytes(blob.size)}, which exceeds the ${MAX_PROFILE_IMAGE_MB}MB limit. Try a smaller source image.`,
         );
         return;
       }
@@ -754,7 +804,9 @@ export const Profile: React.FC = () => {
       }
 
       const url: string = res.data.imageUrl || res.data.image?.url;
-      setProfile((p) => (p ? { ...p, image: { url, filename: "profile_image" } } : null));
+      setProfile((p) =>
+        p ? { ...p, image: { url, filename: "profile_image" } } : null,
+      );
       if (currentUser) {
         login({ ...currentUser, image: { url, filename: "profile_image" } });
       }
@@ -859,7 +911,9 @@ export const Profile: React.FC = () => {
 
   const handleBannerFilterClick = (val: string) => {
     setBannerFilter(val);
-    const el = document.querySelector(".banner-edit-modal .cropper-view-box img") as HTMLElement | null;
+    const el = document.querySelector(
+      ".banner-edit-modal .cropper-view-box img",
+    ) as HTMLElement | null;
     if (el) el.style.filter = val === "none" ? "" : val;
   };
 
@@ -875,7 +929,9 @@ export const Profile: React.FC = () => {
     }
 
     const url: string = res.data.bannerUrl || res.data.banner?.url;
-    setProfile((p) => (p ? { ...p, banner: { url, filename: "banner_image" } } : null));
+    setProfile((p) =>
+      p ? { ...p, banner: { url, filename: "banner_image" } } : null,
+    );
     if (currentUser) {
       login({ ...currentUser, banner: { url, filename: "banner_image" } });
     }
@@ -929,7 +985,7 @@ export const Profile: React.FC = () => {
 
       if (blob.size > MAX_BANNER_BYTES) {
         setBannerEditError(
-          `Processed image is ${formatBytes(blob.size)}, which exceeds the ${MAX_BANNER_IMAGE_MB}MB limit. Try a smaller source image.`
+          `Processed image is ${formatBytes(blob.size)}, which exceeds the ${MAX_BANNER_IMAGE_MB}MB limit. Try a smaller source image.`,
         );
         return;
       }
@@ -954,7 +1010,8 @@ export const Profile: React.FC = () => {
       showAlert("success", "Cover photo removed.");
     } catch (err: any) {
       setBannerEditError(
-        err?.response?.data?.error || "Failed to remove cover photo. Try again."
+        err?.response?.data?.error ||
+        "Failed to remove cover photo. Try again.",
       );
     }
   };
@@ -965,7 +1022,9 @@ export const Profile: React.FC = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 rounded-full border-2 border-gray-200 border-t-gray-800 animate-spin mx-auto mb-4" />
-          <p className="text-[13px] text-gray-500 font-medium">Loading profile…</p>
+          <p className="text-[13px] text-gray-500 font-medium">
+            Loading profile…
+          </p>
         </div>
       </div>
     );
@@ -1010,62 +1069,9 @@ export const Profile: React.FC = () => {
 
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top navigation pill */}
-      <div className="sticky top-0 z-50 w-full pointer-events-none">
-        <div className="max-w-2xl mx-auto px-4 pt-3.5">
-          <div className="pointer-events-auto relative overflow-hidden mb-2 rounded-2xl h-[52px] sm:h-[56px] border border-white/[0.08] shadow-[0_10px_30px_rgba(0,0,0,0.5),_0_0_0_1px_rgba(196,149,106,0.08)] backdrop-blur-md">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#18161a]/95 via-[#121014]/95 to-[#0c0b0e]/95" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(196,149,106,0.18),_transparent_55%)] pointer-events-none" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(140,110,80,0.12),_transparent_50%)] pointer-events-none" />
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c4956a]/35 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
+    <div className="min-h-screen  bg-gray-50">
 
-            <div className="relative z-10 flex items-center justify-between h-full gap-3 px-3 sm:px-4">
-              <div className="flex items-center gap-2.5 min-w-0 h-full">
-                <button
-                  onClick={() => navigate(-1)}
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 text-[#a89f96] hover:text-[#f5f0ea] transition-all active:scale-95 shrink-0"
-                  aria-label="Go back"
-                >
-                  <ArrowLeft className="w-4 h-4" strokeWidth={2.5} />
-                </button>
-                <div className="w-[3px] py-3 h-7 rounded-full bg-gradient-to-b from-[#e8c9a0] via-[#c4956a] to-[#8b6a4a] shrink-0 opacity-90" />
-                <div className="min-w-0">
-                  <p className="text-[13px] sm:text-[14px] font-bold text-[#f5f0ea] tracking-tight truncate leading-tight max-w-[120px] sm:max-w-[200px]">
-                    {profile.name}
-                  </p>
-                  <p className="text-[10px] sm:text-[11px] text-[#a89f96]/80 font-medium tracking-wide mt-0.5 leading-none truncate">
-                    @{profile.username}
-                  </p>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
-                {isSelf && (
-                  <Link
-                    to="/settings"
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center bg-white/[0.05] border border-white/10 text-[#a89f96] hover:text-[#f5f0ea] hover:bg-white/[0.1] transition-all active:scale-95"
-                    aria-label="Settings"
-                  >
-                    <Settings className="w-4 h-4" strokeWidth={2.2} />
-                  </Link>
-                )}
-                {!isSelf && currentUser && (
-                  <button
-                    onClick={() => navigate(`/chat?user=${profile._id}`)}
-                    className="h-8 sm:h-9 px-3.5 rounded-full text-[11px] sm:text-[12px] font-bold text-[#121014] bg-gradient-to-r from-[#e8c9a0] to-[#c4956a] hover:opacity-95 active:scale-95 transition-all inline-flex items-center gap-1.5 shadow-lg shadow-[#c4956a]/15 border border-[#e8c9a0]/20"
-                    aria-label="Message"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" strokeWidth={2.5} />
-                    <span className="font-semibold tracking-tight hidden sm:inline">Message</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Global alert */}
       {alert && (
@@ -1074,14 +1080,17 @@ export const Profile: React.FC = () => {
         </div>
       )}
 
-      <main className="max-w-2xl mx-auto pb-20">
+      <main className="max-w-[76rem]  border-rounded  mx-auto pb-20">
         {/* Banner */}
-        <div className="relative w-full overflow-hidden bg-gray-200" style={{ aspectRatio: "16/5" }}>
+        <div
+          className="relative w-full  rounded-none lg:rounded-2xl overflow-hidden bg-gray-200"
+          style={{ aspectRatio: "16/5" }}
+        >
           {profile.banner?.url ? (
             <img
               src={profile.banner.url}
               alt="Cover"
-              className="w-full h-full object-cover cursor-pointer"
+              className="w-full  rounded-none lg:rounded-2xl h-full object-cover cursor-pointer"
               onClick={() => setBannerViewOpen(true)}
             />
           ) : (
@@ -1129,11 +1138,10 @@ export const Profile: React.FC = () => {
                   <button
                     onClick={handleFollowToggle}
                     disabled={followLoading}
-                    className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] disabled:opacity-60 ${
-                      isFollowing
-                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
-                        : "bg-gray-900 text-white hover:bg-gray-800"
-                    }`}
+                    className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] disabled:opacity-60 ${isFollowing
+                      ? "bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200"
+                      : "bg-gray-900 text-white hover:bg-gray-800"
+                      }`}
                   >
                     {followLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
@@ -1155,6 +1163,14 @@ export const Profile: React.FC = () => {
                 </>
               ) : isSelf ? (
                 <>
+                  <Link
+                    to="/diary/calendar"
+                    className="px-3 py-2 rounded-xl text-[13px] font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors border border-gray-200 flex items-center gap-1.5"
+                    title="My Diary Calendar"
+                  >
+                    <Calendar className="w-3.5 h-3.5" strokeWidth={1.8} />
+                    <span className="hidden sm:inline">Calendar</span>
+                  </Link>
                   <Link
                     to="/settings"
                     className="px-3 py-2 rounded-xl text-[13px] font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors border border-gray-200 flex items-center gap-1.5"
@@ -1178,14 +1194,18 @@ export const Profile: React.FC = () => {
           {/* Name & bio */}
           <div className="mb-4">
             <div className="flex items-center gap-2 flex-wrap mb-0.5">
-              <h1 className="text-[18px] sm:text-[20px] font-bold text-gray-900">{profile.name}</h1>
+              <h1 className="text-[18px] sm:text-[20px] font-bold text-gray-900">
+                {profile.name}
+              </h1>
               {followsMe && !isSelf && (
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
                   Follows you
                 </span>
               )}
             </div>
-            <p className="text-[12.5px] text-gray-400 mb-3">@{profile.username}</p>
+            <p className="text-[12.5px] text-gray-400 mb-3">
+              @{profile.username}
+            </p>
             {profile.bio && (
               <p className="text-[13.5px] text-gray-600 leading-relaxed whitespace-pre-wrap max-w-lg">
                 {profile.bio}
@@ -1224,22 +1244,59 @@ export const Profile: React.FC = () => {
                 {profile.storiesCount || stories.length}
               </span>
               <span className="text-[12px] text-gray-400">
-                {(profile.storiesCount || stories.length) === 1 ? "Story" : "Stories"}
+                {(profile.storiesCount || stories.length) === 1
+                  ? "Story"
+                  : "Stories"}
               </span>
             </div>
           </div>
+
+          {/* Calendar Entry Point for Owner */}
+          {isSelf && (
+            <div className="mt-4 pt-3.5 border-t border-gray-100">
+              <Link
+                to="/diary/calendar"
+                className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-gray-50/70 hover:bg-gray-100/80 border border-gray-100 transition-all duration-200 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white border border-gray-200/80 shadow-xs flex items-center justify-center text-gray-700 group-hover:text-gray-900 group-hover:border-gray-300 transition-colors">
+                    <Calendar className="w-4 h-4" strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <h3 className="text-[13px] font-semibold text-gray-900 flex items-center gap-1.5">
+                      My Diary Calendar
+                    </h3>
+                    <p className="text-[11.5px] text-gray-400">
+                      See what you wrote on each day
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-[12px] font-semibold text-gray-600 group-hover:text-gray-900 transition-colors pr-1">
+                  <span>View</span>
+                  <ChevronRight
+                    className="w-4 h-4 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all"
+                    strokeWidth={2}
+                  />
+                </div>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Tabs */}
-        <div className="sticky z-40 bg-white border-b border-gray-100" style={{ top: STICKY_TAB_TOP_OFFSET }}>
+        <div
+          className="sticky  bg-white border-b border-gray-100"
+          style={{ top: STICKY_TAB_TOP_OFFSET }}
+        >
           <div className="max-w-2xl mx-auto flex">
             {(["writings", "about"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-3.5 text-[13px] font-semibold capitalize transition-colors relative ${
-                  activeTab === tab ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
-                }`}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-3.5 text-[13px] font-semibold capitalize transition-colors relative ${activeTab === tab
+                  ? "text-gray-900"
+                  : "text-gray-400 hover:text-gray-600"
+                  }`}
               >
                 {tab === "writings" ? (
                   <>
@@ -1247,11 +1304,10 @@ export const Profile: React.FC = () => {
                     Writings
                     {stories.length > 0 && (
                       <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                          activeTab === "writings"
-                            ? "bg-gray-900 text-white"
-                            : "bg-gray-100 text-gray-400"
-                        }`}
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === "writings"
+                          ? "bg-gray-900 text-white"
+                          : "bg-gray-100 text-gray-400"
+                          }`}
                       >
                         {stories.length}
                       </span>
@@ -1278,7 +1334,10 @@ export const Profile: React.FC = () => {
               {reversedStories.length === 0 ? (
                 <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center mt-2">
                   <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center mx-auto mb-4">
-                    <Feather className="w-6 h-6 text-gray-300" strokeWidth={1.5} />
+                    <Feather
+                      className="w-6 h-6 text-gray-300"
+                      strokeWidth={1.5}
+                    />
                   </div>
                   <h3 className="text-[15px] font-bold text-gray-800 mb-1.5">
                     {isSelf ? "Write your first story" : "No stories yet"}
@@ -1302,27 +1361,26 @@ export const Profile: React.FC = () => {
                 <>
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[12px] text-gray-400 font-medium">
-                      {reversedStories.length} {reversedStories.length === 1 ? "story" : "stories"}
+                      {reversedStories.length}{" "}
+                      {reversedStories.length === 1 ? "story" : "stories"}
                     </p>
                     <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
                       <button
                         onClick={() => setStoriesView("grid")}
-                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
-                          storiesView === "grid"
-                            ? "bg-white shadow-sm text-gray-900"
-                            : "text-gray-400 hover:text-gray-600"
-                        }`}
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${storiesView === "grid"
+                          ? "bg-white shadow-sm text-gray-900"
+                          : "text-gray-400 hover:text-gray-600"
+                          }`}
                         aria-label="Grid view"
                       >
                         <Grid3X3 className="w-3.5 h-3.5" strokeWidth={2} />
                       </button>
                       <button
                         onClick={() => setStoriesView("list")}
-                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${
-                          storiesView === "list"
-                            ? "bg-white shadow-sm text-gray-900"
-                            : "text-gray-400 hover:text-gray-600"
-                        }`}
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${storiesView === "list"
+                          ? "bg-white shadow-sm text-gray-900"
+                          : "text-gray-400 hover:text-gray-600"
+                          }`}
                         aria-label="List view"
                       >
                         <List className="w-3.5 h-3.5" strokeWidth={2} />
@@ -1356,22 +1414,42 @@ export const Profile: React.FC = () => {
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <StatBlock
-                    icon={<Eye className="w-4 h-4 text-gray-400" strokeWidth={1.8} />}
+                    icon={
+                      <Eye
+                        className="w-4 h-4 text-gray-400"
+                        strokeWidth={1.8}
+                      />
+                    }
                     label="Total reads"
                     value={formatNumber(totalViews)}
                   />
                   <StatBlock
-                    icon={<Heart className="w-4 h-4 text-gray-400" strokeWidth={1.8} />}
+                    icon={
+                      <Heart
+                        className="w-4 h-4 text-gray-400"
+                        strokeWidth={1.8}
+                      />
+                    }
                     label="Total likes"
                     value={formatNumber(totalLikes)}
                   />
                   <StatBlock
-                    icon={<BookOpen className="w-4 h-4 text-gray-400" strokeWidth={1.8} />}
+                    icon={
+                      <BookOpen
+                        className="w-4 h-4 text-gray-400"
+                        strokeWidth={1.8}
+                      />
+                    }
                     label="Published"
                     value={`${profile.storiesCount || stories.length} stories`}
                   />
                   <StatBlock
-                    icon={<Users className="w-4 h-4 text-gray-400" strokeWidth={1.8} />}
+                    icon={
+                      <Users
+                        className="w-4 h-4 text-gray-400"
+                        strokeWidth={1.8}
+                      />
+                    }
                     label="Followers"
                     value={formatNumber(profile.followersCount)}
                   />
@@ -1383,7 +1461,10 @@ export const Profile: React.FC = () => {
                   Details
                 </p>
                 <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" strokeWidth={1.8} />
+                  <Calendar
+                    className="w-4 h-4 text-gray-400 flex-shrink-0"
+                    strokeWidth={1.8}
+                  />
                   <div>
                     <p className="text-[11px] text-gray-400">Member since</p>
                     <p className="text-[13px] font-semibold text-gray-800">
@@ -1392,6 +1473,31 @@ export const Profile: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {isSelf && (
+                <Link
+                  to="/diary/calendar"
+                  className="flex items-center justify-between bg-white rounded-2xl p-4 border border-gray-100 hover:border-gray-200 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-700 group-hover:bg-gray-900 group-hover:text-white transition-colors">
+                      <Calendar className="w-4 h-4" strokeWidth={1.8} />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-semibold text-gray-900">
+                        My Diary Calendar
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        See what you wrote on each day
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight
+                    className="w-4 h-4 text-gray-400 group-hover:translate-x-0.5 transition-transform"
+                    strokeWidth={2}
+                  />
+                </Link>
+              )}
 
               {isSelf && (
                 <Link
@@ -1404,7 +1510,9 @@ export const Profile: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-[13px] font-semibold">Start writing</p>
-                      <p className="text-[11px] text-gray-400">Share your story with the world</p>
+                      <p className="text-[11px] text-gray-400">
+                        Share your story with the world
+                      </p>
                     </div>
                   </div>
                   <ChevronRight
@@ -1460,8 +1568,13 @@ export const Profile: React.FC = () => {
               />
               {!profileHasImage && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 rounded-full pointer-events-none">
-                  <ImageIcon className="w-7 h-7 text-white/80 mb-1" strokeWidth={1.5} />
-                  <span className="text-[11px] text-white/80 font-medium">Choose photo</span>
+                  <ImageIcon
+                    className="w-7 h-7 text-white/80 mb-1"
+                    strokeWidth={1.5}
+                  />
+                  <span className="text-[11px] text-white/80 font-medium">
+                    Choose photo
+                  </span>
                 </div>
               )}
             </div>
@@ -1485,11 +1598,10 @@ export const Profile: React.FC = () => {
                       key={f.name}
                       type="button"
                       onClick={() => handleProfileFilterClick(f.value)}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11.5px] font-medium transition-all whitespace-nowrap border ${
-                        profileFilter === f.value
-                          ? "bg-gray-900 text-white border-gray-900"
-                          : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"
-                      }`}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11.5px] font-medium transition-all whitespace-nowrap border ${profileFilter === f.value
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"
+                        }`}
                     >
                       {f.name}
                     </button>
@@ -1564,7 +1676,11 @@ export const Profile: React.FC = () => {
               style={{ aspectRatio: "16/5" }}
             >
               {bannerIsGif && bannerGifPreviewUrl ? (
-                <img src={bannerGifPreviewUrl} alt="GIF preview" className="w-full h-full object-cover" />
+                <img
+                  src={bannerGifPreviewUrl}
+                  alt="GIF preview"
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 <img
                   ref={bannerPreviewRef}
@@ -1578,8 +1694,13 @@ export const Profile: React.FC = () => {
               )}
               {!bannerSelected && !profile.banner?.url && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <ImageIcon className="w-7 h-7 text-gray-300 mb-1.5" strokeWidth={1.5} />
-                  <p className="text-[12px] text-gray-400 font-medium">Choose a cover photo</p>
+                  <ImageIcon
+                    className="w-7 h-7 text-gray-300 mb-1.5"
+                    strokeWidth={1.5}
+                  />
+                  <p className="text-[12px] text-gray-400 font-medium">
+                    Choose a cover photo
+                  </p>
                   <p className="text-[10.5px] text-gray-300 mt-0.5">
                     Recommended: 1200 × 375px · GIF supported
                   </p>
@@ -1598,7 +1719,9 @@ export const Profile: React.FC = () => {
             {bannerIsGif && bannerSelected && (
               <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-3.5 py-2.5">
                 <div className="w-5 h-5 rounded-md bg-blue-500 flex items-center justify-center flex-shrink-0">
-                  <span className="text-[8px] font-black text-white leading-none">GIF</span>
+                  <span className="text-[8px] font-black text-white leading-none">
+                    GIF
+                  </span>
                 </div>
                 <p className="text-[12px] text-blue-700 font-medium">
                   Animated GIF — saved as-is to keep the animation.
@@ -1617,11 +1740,10 @@ export const Profile: React.FC = () => {
                       key={f.name}
                       type="button"
                       onClick={() => handleBannerFilterClick(f.value)}
-                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-medium transition-all border ${
-                        bannerFilter === f.value
-                          ? "bg-gray-900 text-white border-gray-900"
-                          : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-[11.5px] font-medium transition-all border ${bannerFilter === f.value
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100"
+                        }`}
                     >
                       {f.name}
                     </button>
@@ -1681,10 +1803,13 @@ export const Profile: React.FC = () => {
           <div className="bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl max-h-[75vh] flex flex-col shadow-xl border border-gray-100 animate-slideUp">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 flex-shrink-0">
               <div>
-                <h3 className="text-[15px] font-bold text-gray-900 capitalize">{modalType}</h3>
+                <h3 className="text-[15px] font-bold text-gray-900 capitalize">
+                  {modalType}
+                </h3>
                 {!modalLoading && (
                   <p className="text-[11px] text-gray-400 mt-0.5">
-                    {modalUsers.length} {modalUsers.length === 1 ? "person" : "people"}
+                    {modalUsers.length}{" "}
+                    {modalUsers.length === 1 ? "person" : "people"}
                   </p>
                 )}
               </div>
@@ -1715,9 +1840,14 @@ export const Profile: React.FC = () => {
               ) : modalUsers.length === 0 ? (
                 <div className="py-14 text-center px-5">
                   <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                    <Users className="w-5 h-5 text-gray-300" strokeWidth={1.8} />
+                    <Users
+                      className="w-5 h-5 text-gray-300"
+                      strokeWidth={1.8}
+                    />
                   </div>
-                  <p className="text-[14px] font-bold text-gray-800">No one here yet</p>
+                  <p className="text-[14px] font-bold text-gray-800">
+                    No one here yet
+                  </p>
                   <p className="text-[12px] text-gray-400 mt-1">
                     {modalType === "followers"
                       ? "No followers yet."
@@ -1739,8 +1869,12 @@ export const Profile: React.FC = () => {
                         className="w-10 h-10 rounded-xl object-cover flex-shrink-0 bg-gray-100"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold text-gray-800 truncate">{u.name}</p>
-                        <p className="text-[11px] text-gray-400 truncate">@{u.username}</p>
+                        <p className="text-[13px] font-semibold text-gray-800 truncate">
+                          {u.name}
+                        </p>
+                        <p className="text-[11px] text-gray-400 truncate">
+                          @{u.username}
+                        </p>
                       </div>
                       <ChevronRight
                         className="w-4 h-4 text-gray-300 group-hover:text-gray-400 transition-colors flex-shrink-0"
@@ -1755,7 +1889,9 @@ export const Profile: React.FC = () => {
         </div>
       )}
 
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fadeIn {
@@ -1768,7 +1904,9 @@ export const Profile: React.FC = () => {
         }
         .animate-fadeIn { animation: fadeIn 0.22s ease-out; }
         .animate-slideUp { animation: slideUp 0.28s ease-out; }
-      `}} />
+      `,
+        }}
+      />
     </div>
   );
 };
