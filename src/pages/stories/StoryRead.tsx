@@ -2009,7 +2009,7 @@ export const StoryRead: React.FC = () => {
         <main className="max-w-[720px] mx-auto px-4 sm:px-6 pt-5 pb-24">
           {/* Toolbar */}
           {/* Floating Sticky Reader Navbar */}
-          <div className="sticky  w-full pt-3 sm:pt-4 px-3 sm:px-5 pointer-events-none select-none mb-6 sm:mb-8">
+          <div className="sticky top-0 z-50 w-full pt-3 sm:pt-4 px-3 sm:px-5 pointer-events-none select-none mb-6 sm:mb-8">
             <header
               className="pointer-events-auto max-w-2xl mx-auto h-14 sm:h-[60px] rounded-full sm:rounded-[22px] flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-4 backdrop-blur-md transition-all duration-300 border"
               style={{
@@ -2084,7 +2084,7 @@ export const StoryRead: React.FC = () => {
                 </button>
 
                 {/* Dropdown Wrapper */}
-                <div className="relative" ref={moreRef}>
+                <div className={`relative ${moreOpen ? "z-[60]" : "z-0"}`} ref={moreRef}>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
