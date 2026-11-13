@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import {
@@ -269,11 +270,12 @@ export const AccountSettings: React.FC = () => {
     try {
       const res = await api.delete('/users/account');
       if (res.data.success) {
+        toast.success('Your account has been permanently deleted.');
         await logout();
         navigate('/login');
       }
     } catch (err: any) {
-      setDeleteError(err.response?.data?.error || 'Failed to delete account. Please try again.');
+      setDeleteError(err.response?.data?.error || err?.message || 'Failed to delete account. Please try again.');
     } finally {
       setDeletingAccount(false);
     }
@@ -338,7 +340,7 @@ export const AccountSettings: React.FC = () => {
               </div>
 
               <p className="text-slate-500 text-[13px] leading-relaxed mb-5">
-                Your profile, comments, and all data will be permanently erased.
+                Permanently erase your account, published stories, comments, likes, followers, notifications, chat messages, and uploaded media. This action cannot be undone.
               </p>
 
               <form onSubmit={handleDeleteAccount} className="space-y-4">

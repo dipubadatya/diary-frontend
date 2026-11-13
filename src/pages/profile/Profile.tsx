@@ -49,6 +49,12 @@ interface Story {
   views: string[];
   likedBy: string[];
   timeStamp: string;
+  owner?: {
+    _id?: string;
+    username: string;
+    name: string;
+    image?: { url: string };
+  };
 }
 
 interface ProfileData {
@@ -75,7 +81,7 @@ interface FollowUser {
 
 type AlertType = "success" | "error" | "info";
 type AlertState = { type: AlertType; message: string } | null;
-type TabKey = "writings" | "about";
+type TabKey = "writings" | "liked" | "about";
 type StoriesView = "grid" | "list";
 type FollowModalType = "followers" | "following";
 
@@ -382,106 +388,171 @@ const BottomSheetModal: React.FC<{
     </div>
   );
 
-const GridStoryCard: React.FC<{ story: Story }> = ({ story }) => (
-  <Link
-    to={`/stories/${story._id}`}
-    className="group block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 active:scale-[0.98]"
-  >
-    <div
-      className="relative w-full bg-gray-100 overflow-hidden"
-      style={{ aspectRatio: "4/3" }}
+interface StoryCardProps {
+  story: Story;
+  showUnlike?: boolean;
+  onUnlike?: (storyId: string) => void;
+}
+
+const GridStoryCard: React.FC<StoryCardProps> = ({
+  story,
+  showUnlike = false,
+  onUnlike,
+}) => (
+  <div className="relative group/card">
+    <Link
+      to={`/stories/${story._id}`}
+      className="group block bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-200 active:scale-[0.98]"
     >
-      {story.image?.url ? (
-        <img
-          src={story.image.url}
-          alt={story.title}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-50">
-          <Feather className="w-7 h-7 text-gray-200" strokeWidth={1.5} />
+      <div
+        className="relative w-full bg-gray-100 overflow-hidden"
+        style={{ aspectRatio: "4/3" }}
+      >
+        {story.image?.url ? (
+          <img
+            src={story.image.url}
+            alt={story.title}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-50">
+            <Feather className="w-7 h-7 text-gray-200" strokeWidth={1.5} />
+          </div>
+        )}
+        {story.category && (
+          <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/90 text-gray-600 backdrop-blur-sm">
+            {story.category}
+          </span>
+        )}
+        {showUnlike && onUnlike && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onUnlike(story._id);
+            }}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-white/95 hover:bg-white text-rose-500 hover:text-rose-600 shadow-sm backdrop-blur-sm transition-all hover:scale-110 active:scale-90 z-10 border border-gray-100"
+            title="Unlike story"
+            aria-label="Unlike story"
+          >
+            <Heart className="w-3.5 h-3.5 fill-rose-500" strokeWidth={1.8} />
+          </button>
+        )}
+      </div>
+      <div className="p-3">
+        {story.owner && (
+          <p className="text-[10px] text-gray-400 truncate mb-1">
+            by <span className="font-semibold text-gray-600">@{story.owner.username}</span>
+          </p>
+        )}
+        <h3 className="text-[12.5px] font-bold text-gray-900 line-clamp-2 leading-snug mb-2 group-hover:text-gray-600 transition-colors">
+          {story.title}
+        </h3>
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-gray-400">
+            {timeAgo(story.timeStamp)}
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+              <Eye className="w-3 h-3" strokeWidth={1.8} />
+              {formatNumber(story.views?.length || 0)}
+            </span>
+            <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+              <Heart className="w-3 h-3" strokeWidth={1.8} />
+              {formatNumber(story.likedBy?.length || 0)}
+            </span>
+          </div>
         </div>
-      )}
-      {story.category && (
-        <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-white/90 text-gray-600 backdrop-blur-sm">
-          {story.category}
-        </span>
-      )}
-    </div>
-    <div className="p-3">
-      <h3 className="text-[12.5px] font-bold text-gray-900 line-clamp-2 leading-snug mb-2 group-hover:text-gray-600 transition-colors">
-        {story.title}
-      </h3>
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] text-gray-400">
-          {timeAgo(story.timeStamp)}
-        </span>
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+      </div>
+    </Link>
+  </div>
+);
+
+const ListStoryCard: React.FC<StoryCardProps> = ({
+  story,
+  showUnlike = false,
+  onUnlike,
+}) => (
+  <div className="relative group/card flex items-center bg-white rounded-2xl border border-gray-100 p-3 hover:shadow-sm transition-all duration-200">
+    <Link
+      to={`/stories/${story._id}`}
+      className="group flex-1 flex items-center gap-3 min-w-0"
+    >
+      <div className="w-20 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+        {story.image?.url ? (
+          <img
+            src={story.image.url}
+            alt={story.title}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Feather className="w-5 h-5 text-gray-200" strokeWidth={1.5} />
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0 pr-2">
+        <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+          {story.category && (
+            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">
+              {story.category}
+            </span>
+          )}
+          {story.owner && (
+            <>
+              <span className="text-[9px] text-gray-300">·</span>
+              <span className="text-[10px] text-gray-400 truncate">
+                @{story.owner.username}
+              </span>
+            </>
+          )}
+          <span className="text-[9px] text-gray-300">·</span>
+          <span className="text-[10px] text-gray-400">
+            {timeAgo(story.timeStamp)}
+          </span>
+        </div>
+        <h3 className="text-[13px] font-bold text-gray-900 line-clamp-2 leading-snug mb-2 group-hover:text-gray-600 transition-colors">
+          {story.title}
+        </h3>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 text-[10.5px] text-gray-400">
             <Eye className="w-3 h-3" strokeWidth={1.8} />
             {formatNumber(story.views?.length || 0)}
           </span>
-          <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+          <span className="flex items-center gap-1 text-[10.5px] text-gray-400">
             <Heart className="w-3 h-3" strokeWidth={1.8} />
             {formatNumber(story.likedBy?.length || 0)}
           </span>
         </div>
       </div>
-    </div>
-  </Link>
-);
-
-const ListStoryCard: React.FC<{ story: Story }> = ({ story }) => (
-  <Link
-    to={`/stories/${story._id}`}
-    className="group flex items-center gap-3 bg-white rounded-2xl border border-gray-100 p-3 hover:shadow-sm transition-all duration-200 active:scale-[0.99]"
-  >
-    <div className="w-20 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-      {story.image?.url ? (
-        <img
-          src={story.image.url}
-          alt={story.title}
-          loading="lazy"
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <Feather className="w-5 h-5 text-gray-200" strokeWidth={1.5} />
-        </div>
+    </Link>
+    <div className="flex items-center gap-2 flex-shrink-0">
+      {showUnlike && onUnlike && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onUnlike(story._id);
+          }}
+          className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 transition-all active:scale-90"
+          title="Unlike story"
+          aria-label="Unlike story"
+        >
+          <Heart className="w-4 h-4 fill-rose-500" strokeWidth={1.8} />
+        </button>
       )}
+      <Link to={`/stories/${story._id}`}>
+        <ChevronRight
+          className="w-4 h-4 text-gray-200 hover:text-gray-400 transition-colors"
+          strokeWidth={2}
+        />
+      </Link>
     </div>
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center gap-1.5 mb-1">
-        {story.category && (
-          <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">
-            {story.category}
-          </span>
-        )}
-        <span className="text-[9px] text-gray-300">·</span>
-        <span className="text-[10px] text-gray-400">
-          {timeAgo(story.timeStamp)}
-        </span>
-      </div>
-      <h3 className="text-[13px] font-bold text-gray-900 line-clamp-2 leading-snug mb-2 group-hover:text-gray-600 transition-colors">
-        {story.title}
-      </h3>
-      <div className="flex items-center gap-3">
-        <span className="flex items-center gap-1 text-[10.5px] text-gray-400">
-          <Eye className="w-3 h-3" strokeWidth={1.8} />
-          {formatNumber(story.views?.length || 0)}
-        </span>
-        <span className="flex items-center gap-1 text-[10.5px] text-gray-400">
-          <Heart className="w-3 h-3" strokeWidth={1.8} />
-          {formatNumber(story.likedBy?.length || 0)}
-        </span>
-      </div>
-    </div>
-    <ChevronRight
-      className="w-4 h-4 text-gray-200 group-hover:text-gray-400 transition-colors flex-shrink-0"
-      strokeWidth={2}
-    />
-  </Link>
+  </div>
 );
 
 /* ============================================================================
@@ -508,6 +579,12 @@ export const Profile: React.FC = () => {
   const [alert, setAlert] = useState<AlertState>(null);
   const [bannerViewOpen, setBannerViewOpen] = useState(false);
   const [profileViewOpen, setProfileViewOpen] = useState(false);
+
+  // ── Liked stories state ───────────────────────────────────────────────────
+  const [likedStories, setLikedStories] = useState<Story[]>([]);
+  const [loadingLiked, setLoadingLiked] = useState<boolean>(false);
+  const [hasLoadedLiked, setHasLoadedLiked] = useState<boolean>(false);
+  const [likedCount, setLikedCount] = useState<number>(0);
 
   // ── Followers/Following modal ─────────────────────────────────────────────
   const [modalType, setModalType] = useState<FollowModalType | null>(null);
@@ -596,6 +673,9 @@ export const Profile: React.FC = () => {
         setStories(res.data.stories || []);
         setIsFollowing(!!res.data.isFollowing);
         setFollowsMe(!!res.data.followsMe);
+        if (res.data.stats?.likedStoriesCount !== undefined) {
+          setLikedCount(res.data.stats.likedStoriesCount);
+        }
       } else {
         setPageError("This profile could not be loaded.");
       }
@@ -611,10 +691,78 @@ export const Profile: React.FC = () => {
     }
   }, [username]);
 
+  /* ── Fetch liked stories ────────────────────────────────────────────────── */
+  const fetchLikedStories = useCallback(async () => {
+    if (!username) return;
+    setLoadingLiked(true);
+    try {
+      const res = await api.get(`/users/profile/${username}/liked`);
+      if (res.data.success) {
+        setLikedStories(res.data.stories || []);
+        setLikedCount(
+          res.data.pagination?.totalStories ?? res.data.stories?.length ?? 0,
+        );
+        setHasLoadedLiked(true);
+      }
+    } catch (err: any) {
+      console.error("Failed to load liked stories:", err);
+    } finally {
+      setLoadingLiked(false);
+    }
+  }, [username]);
+
+  /* ── Unlike a story ─────────────────────────────────────────────────────── */
+  const handleUnlike = useCallback(
+    async (storyId: string) => {
+      // Optimistic removal from liked list
+      setLikedStories((prev) => prev.filter((s) => s._id !== storyId));
+      setLikedCount((prev) => Math.max(0, prev - 1));
+
+      try {
+        const res = await api.post(`/stories/${storyId}/likes`);
+        if (res.data.success) {
+          showAlert("success", "Story unliked.");
+        } else {
+          fetchLikedStories();
+          showAlert("error", "Could not unlike story. Please try again.");
+        }
+      } catch (err: any) {
+        fetchLikedStories();
+        showAlert(
+          "error",
+          err?.response?.data?.error ||
+          err?.message ||
+          "Failed to unlike story.",
+        );
+      }
+    },
+    [fetchLikedStories, showAlert],
+  );
+
   useEffect(() => {
     fetchProfile();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [fetchProfile]);
+
+  useEffect(() => {
+    // Reset state on username change
+    setActiveTab("writings");
+    setLikedStories([]);
+    setHasLoadedLiked(false);
+  }, [username]);
+
+  useEffect(() => {
+    // Safety: If not profile owner, liked tab must never be active
+    if (!isSelf && activeTab === "liked") {
+      setActiveTab("writings");
+    }
+  }, [isSelf, activeTab]);
+
+  useEffect(() => {
+    if (isSelf && activeTab === "liked" && !hasLoadedLiked) {
+      fetchLikedStories();
+    }
+  }, [isSelf, activeTab, hasLoadedLiked, fetchLikedStories]);
 
   /* ── Follow / Unfollow ──────────────────────────────────────────────────── */
   const handleFollowToggle = async () => {
@@ -1289,7 +1437,10 @@ export const Profile: React.FC = () => {
           style={{ top: STICKY_TAB_TOP_OFFSET }}
         >
           <div className="max-w-2xl mx-auto flex">
-            {(["writings", "about"] as const).map((tab) => (
+            {(isSelf
+              ? (["writings", "liked", "about"] as const)
+              : (["writings", "about"] as const)
+            ).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -1301,7 +1452,7 @@ export const Profile: React.FC = () => {
                 {tab === "writings" ? (
                   <>
                     <BookOpen className="w-3.5 h-3.5" strokeWidth={2} />
-                    Writings
+                    <span>Writings</span>
                     {stories.length > 0 && (
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === "writings"
@@ -1313,10 +1464,25 @@ export const Profile: React.FC = () => {
                       </span>
                     )}
                   </>
+                ) : tab === "liked" ? (
+                  <>
+                    <Heart className="w-3.5 h-3.5" strokeWidth={2} />
+                    <span>Liked</span>
+                    {(likedCount > 0 || likedStories.length > 0) && (
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${activeTab === "liked"
+                          ? "bg-gray-900 text-white"
+                          : "bg-gray-100 text-gray-400"
+                          }`}
+                      >
+                        {hasLoadedLiked ? likedStories.length : likedCount}
+                      </span>
+                    )}
+                  </>
                 ) : (
                   <>
                     <Users className="w-3.5 h-3.5" strokeWidth={2} />
-                    About
+                    <span>About</span>
                   </>
                 )}
                 {activeTab === tab && (
@@ -1389,15 +1555,98 @@ export const Profile: React.FC = () => {
                   </div>
 
                   {storiesView === "grid" ? (
-                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4">
                       {reversedStories.map((story) => (
                         <GridStoryCard key={story._id} story={story} />
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-2.5">
+                    <div className="space-y-2.5 max-w-4xl mx-auto">
                       {reversedStories.map((story) => (
                         <ListStoryCard key={story._id} story={story} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {isSelf && activeTab === "liked" && (
+            <div className="animate-fadeIn">
+              {loadingLiked && !hasLoadedLiked ? (
+                <div className="py-12 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                </div>
+              ) : likedStories.length === 0 ? (
+                <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center mt-2">
+                  <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto mb-4">
+                    <Heart className="w-6 h-6 text-rose-300" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-[15px] font-bold text-gray-800 mb-1.5">
+                    No liked stories yet
+                  </h3>
+                  <p className="text-[12.5px] text-gray-400 max-w-xs mx-auto leading-relaxed">
+                    Stories you like while browsing Diary will appear here.
+                  </p>
+                  <Link
+                    to="/stories"
+                    className="inline-flex items-center gap-1.5 mt-5 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-gray-900 text-white hover:bg-gray-800 transition-colors"
+                  >
+                    Explore stories →
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[12px] text-gray-400 font-medium">
+                      {likedStories.length}{" "}
+                      {likedStories.length === 1 ? "liked story" : "liked stories"}
+                    </p>
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                      <button
+                        onClick={() => setStoriesView("grid")}
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${storiesView === "grid"
+                          ? "bg-white shadow-sm text-gray-900"
+                          : "text-gray-400 hover:text-gray-600"
+                          }`}
+                        aria-label="Grid view"
+                      >
+                        <Grid3X3 className="w-3.5 h-3.5" strokeWidth={2} />
+                      </button>
+                      <button
+                        onClick={() => setStoriesView("list")}
+                        className={`w-7 h-7 rounded-md flex items-center justify-center transition-all ${storiesView === "list"
+                          ? "bg-white shadow-sm text-gray-900"
+                          : "text-gray-400 hover:text-gray-600"
+                          }`}
+                        aria-label="List view"
+                      >
+                        <List className="w-3.5 h-3.5" strokeWidth={2} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {storiesView === "grid" ? (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 lg:gap-4">
+                      {likedStories.map((story) => (
+                        <GridStoryCard
+                          key={story._id}
+                          story={story}
+                          showUnlike={true}
+                          onUnlike={handleUnlike}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5 max-w-4xl mx-auto">
+                      {likedStories.map((story) => (
+                        <ListStoryCard
+                          key={story._id}
+                          story={story}
+                          showUnlike={true}
+                          onUnlike={handleUnlike}
+                        />
                       ))}
                     </div>
                   )}
