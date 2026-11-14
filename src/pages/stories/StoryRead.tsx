@@ -3,7 +3,6 @@ import React, {
   useEffect,
   useRef,
   useMemo,
-  useCallback,
 } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -167,6 +166,17 @@ const css = `
   .body-content strong { font-weight: 700; color: var(--text); }
   .body-content em { font-style: italic; }
   .body-content a { color: var(--accent-purple); text-decoration: underline; text-underline-offset: 3px; }
+  /* ── Synchronized Audio Sentence Highlighting ── */
+  mark.tts-highlight {
+    background: rgba(123, 127, 232, 0.22) !important;
+    color: inherit !important;
+    border-bottom: 2.5px solid var(--accent-purple);
+    border-radius: 4px;
+    padding: 1.5px 3px;
+    box-shadow: 0 0 12px rgba(123, 127, 232, 0.25);
+    transition: all 0.2s ease;
+  }
+
   .body-content ul, .body-content ol { margin: 1em 0 1.5em; padding-left: 1.5rem; }
   .body-content ul { list-style: disc; }
   .body-content ol { list-style: decimal; }
@@ -350,19 +360,32 @@ const Avatar: React.FC<{
   />
 );
 
-// ─── Voice Helper ────────────────────────────────────────────────────────────
-function getBestVoices(all: SpeechSynthesisVoice[]): SpeechSynthesisVoice[] {
-  const rx = [
-    /google.*english/i,
-    /samantha/i,
-    /karen/i,
-    /daniel/i,
-    /natural/i,
-    /neural/i,
-  ];
-  const en = all.filter((v) => v.lang.startsWith("en"));
-  const good = en.filter((v) => rx.some((r) => r.test(v.name)));
-  return good.length ? good : en.slice(0, 5);
+// ─── Sentence Timing Interface ───────────────────────────────────────────────
+export interface SentenceTiming {
+  index: number;
+  text: string;
+  start: number;
+  end: number;
+}
+
+// ─── Supported TTS Languages ──────────────────────────────────────────────────
+const TTS_LANGUAGES: { code: "en" | "hi" | "or"; name: string; native: string; flag: string }[] = [
+  { code: "en", name: "English", native: "English", flag: "🇺🇸" },
+  { code: "hi", name: "Hindi", native: "हिन्दी", flag: "🇮🇳" },
+  { code: "or", name: "Odia", native: "ଓଡ଼ିଆ", flag: "🇮🇳" },
+];
+
+function detectTextLanguage(str: string): "en" | "hi" | "or" {
+  let or = 0;
+  let hi = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c >= 0x0b00 && c <= 0x0b7f) or++;
+    else if (c >= 0x0900 && c <= 0x097f) hi++;
+  }
+  if (or > 5) return "or";
+  if (hi > 5) return "hi";
+  return "en";
 }
 
 // ─── Waveform ────────────────────────────────────────────────────────────────
@@ -372,19 +395,23 @@ const Waveform: React.FC<{
   onSeek: (p: number) => void;
 }> = ({ progress, playing, onSeek }) => {
   const bars = useMemo(
-    () => Array.from({ length: 42 }, () => 4 + Math.random() * 20),
+    () => Array.from({ length: 48 }, () => 5 + Math.random() * 22),
     [],
   );
   const ref = useRef<HTMLDivElement>(null);
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    onSeek(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)));
+  };
+
   return (
     <div
       ref={ref}
-      onClick={(e) => {
-        if (!ref.current) return;
-        const r = ref.current.getBoundingClientRect();
-        onSeek(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)));
-      }}
-      className="flex-1 h-9 flex items-center gap-[2px] cursor-pointer overflow-hidden"
+      onClick={handleClick}
+      className="flex-1 h-9 flex items-center gap-[2.5px] cursor-pointer overflow-hidden select-none py-1 group"
+      title="Click to seek"
     >
       {bars.map((h, i) => {
         const f = i / bars.length;
@@ -393,12 +420,12 @@ const Waveform: React.FC<{
         return (
           <span
             key={i}
-            className={near ? "wave-bar" : ""}
+            className={`transition-all duration-150 ${near ? "wave-bar" : "group-hover:opacity-90"}`}
             style={{
               display: "inline-block",
               width: 3,
               flexShrink: 0,
-              height: h,
+              height: near ? Math.min(32, h * 1.35) : h,
               borderRadius: 3,
               background: active ? "var(--text)" : "var(--border-hover)",
               transformOrigin: "center",
@@ -410,184 +437,443 @@ const Waveform: React.FC<{
   );
 };
 
-// ─── Audio Player Card ───────────────────────────────────────────────────────
-const AudioCard: React.FC<{ text: string }> = ({ text }) => {
-  const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [curTime, setCurTime] = useState(0);
+// ─── Production Story Audio Player ───────────────────────────────────────────
+interface StoryAudioPlayerProps {
+  text: string;
+  storyId?: string;
+  activeSentenceIndex: number;
+  onSentenceChange: (index: number) => void;
+  onSentencesLoaded: (sentences: SentenceTiming[]) => void;
+}
+
+const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
+  text,
+  storyId,
+  activeSentenceIndex,
+  onSentenceChange,
+  onSentencesLoaded,
+}) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const [lang, setLang] = useState<"en" | "hi" | "or">(() => detectTextLanguage(text));
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [rate, setRate] = useState(1);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [voiceName, setVoiceName] = useState("");
-  const [supported, setSupported] = useState(true);
-  const startRef = useRef(0);
-  const elapsedRef = useRef(0);
-  const rafRef = useRef<number | undefined>(undefined);
+  const [sentences, setSentences] = useState<SentenceTiming[]>([]);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
+  // Sync detected language if text changes dramatically
   useEffect(() => {
-    if (!("speechSynthesis" in window)) {
-      setSupported(false);
-      return;
+    setLang(detectTextLanguage(text));
+    // Reset audio state when text changes
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setAudioUrl(null);
+    setSentences([]);
+    onSentenceChange(-1);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
     }
-    const load = () => {
-      const a = window.speechSynthesis.getVoices();
-      if (!a.length) return;
-      const b = getBestVoices(a);
-      setVoices(b);
-      setVoiceName((p) =>
-        p && b.find((v) => v.name === p) ? p : (b[0]?.name ?? ""),
+  }, [text]);
+
+  const fmt = (s: number) => {
+    if (!isFinite(s) || s < 0) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = String(Math.floor(s % 60)).padStart(2, "0");
+    return `${m}:${sec}`;
+  };
+
+  // Synthesize or retrieve cached audio from backend
+  const fetchAudio = async (targetLang: "en" | "hi" | "or", autoPlay = false) => {
+    setIsLoading(true);
+    try {
+      const res = await api.post("/tts/synthesize", {
+        text,
+        lang: targetLang,
+        storyId,
+      });
+
+      if (res.data.success) {
+        const serverBase = import.meta.env.VITE_SERVER_URL || "";
+        const fullUrl = res.data.audioUrl.startsWith("http")
+          ? res.data.audioUrl
+          : `${serverBase}${res.data.audioUrl}`;
+
+        setAudioUrl(fullUrl);
+        setDuration(res.data.duration);
+        setSentences(res.data.sentences || []);
+        onSentencesLoaded(res.data.sentences || []);
+
+        if (audioRef.current) {
+          audioRef.current.src = fullUrl;
+          audioRef.current.playbackRate = rate;
+          audioRef.current.volume = isMuted ? 0 : volume;
+          if (autoPlay) {
+            try {
+              await audioRef.current.play();
+              setIsPlaying(true);
+            } catch (playErr) {
+              console.warn("Autoplay was blocked or interrupted:", playErr);
+            }
+          }
+        }
+      } else {
+        toast.error(res.data.error || "Failed to generate story audio.");
+      }
+    } catch (err: any) {
+      toast.error(
+        err?.response?.data?.error || "Could not generate speech for this story.",
       );
-    };
-    load();
-    window.speechSynthesis.onvoiceschanged = load;
-    return () => {
-      window.speechSynthesis.cancel();
-      cancelAnimationFrame(rafRef.current!);
-    };
-  }, []);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  useEffect(() => {
-    setDuration(
-      Math.max(((text.trim().split(/\s+/).length / 155) * 60) / rate, 1),
-    );
-  }, [text, rate]);
-  useEffect(
-    () => () => {
-      window.speechSynthesis.cancel();
-      cancelAnimationFrame(rafRef.current!);
-    },
-    [],
-  );
+  // Audio element event handlers
+  const handleTimeUpdate = () => {
+    if (!audioRef.current) return;
+    const t = audioRef.current.currentTime;
+    setCurrentTime(t);
 
-  const fmt = (s: number) =>
-    !isFinite(s) || s < 0
-      ? "0:00"
-      : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+    if (sentences.length > 0) {
+      const idx = sentences.findIndex((s) => t >= s.start && t < s.end);
+      if (idx !== -1 && idx !== activeSentenceIndex) {
+        onSentenceChange(idx);
+      } else if (idx === -1 && t >= (sentences[sentences.length - 1]?.end || 0)) {
+        onSentenceChange(-1);
+      }
+    }
+  };
 
-  const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
-    setPlaying(false);
-    setProgress(0);
-    setCurTime(0);
-    elapsedRef.current = 0;
-    cancelAnimationFrame(rafRef.current!);
-  }, []);
+  const handleLoadedMetadata = () => {
+    if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration)) {
+      setDuration(audioRef.current.duration);
+    }
+  };
 
-  const tick = useCallback(() => {
-    const e = elapsedRef.current + (Date.now() - startRef.current) / 1000;
-    setCurTime(Math.min(e, duration));
-    setProgress(Math.min(e / duration, 1));
-    if (e >= duration) {
-      stop();
+  const handleEnded = () => {
+    setIsPlaying(false);
+    onSentenceChange(-1);
+  };
+
+  // Player controls
+  const togglePlay = async () => {
+    if (!audioUrl) {
+      await fetchAudio(lang, true);
       return;
     }
-    rafRef.current = requestAnimationFrame(tick);
-  }, [duration, stop]);
 
-  const speak = useCallback(
-    (sc = 0) => {
-      if (!supported || !text) return;
-      window.speechSynthesis.cancel();
-      const sl = text.substring(sc).trim();
-      if (!sl) return;
-      const u = new SpeechSynthesisUtterance(sl);
-      u.rate = rate;
-      u.pitch = 1;
-      u.volume = 1;
-      const v = voices.find((v) => v.name === voiceName);
-      if (v) u.voice = v;
-      u.onend = stop;
-      u.onerror = stop;
-      window.speechSynthesis.speak(u);
-      startRef.current = Date.now();
-      setPlaying(true);
-      cancelAnimationFrame(rafRef.current!);
-      rafRef.current = requestAnimationFrame(tick);
-    },
-    [supported, text, rate, voices, voiceName, tick, stop],
-  );
+    if (!audioRef.current) return;
 
-  const toggle = () => {
-    if (!supported) {
-      toast.error("Not supported");
-      return;
-    }
-    if (playing) {
-      window.speechSynthesis.pause();
-      elapsedRef.current += (Date.now() - startRef.current) / 1000;
-      setPlaying(false);
-      cancelAnimationFrame(rafRef.current!);
-    } else if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      startRef.current = Date.now();
-      setPlaying(true);
-      rafRef.current = requestAnimationFrame(tick);
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
     } else {
-      elapsedRef.current = 0;
-      setProgress(0);
-      setCurTime(0);
-      speak(0);
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (e) {
+        toast.error("Playback error. Please try again.");
+      }
     }
+  };
+
+  const stopPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setIsPlaying(false);
+    setCurrentTime(0);
+    onSentenceChange(-1);
   };
 
   const seek = (p: number) => {
-    const w = text.split(/\s+/),
-      wi = Math.floor(p * w.length);
-    elapsedRef.current = p * duration;
-    setProgress(p);
-    setCurTime(p * duration);
-    if (playing) speak(w.slice(0, wi).join(" ").length);
+    const target = p * duration;
+    setCurrentTime(target);
+    if (audioRef.current) {
+      audioRef.current.currentTime = target;
+      if (!isPlaying) {
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      }
+    }
   };
 
-  if (!supported) return null;
+  const jumpToSentence = (idx: number) => {
+    if (idx < 0 || idx >= sentences.length) return;
+    const target = sentences[idx].start;
+    setCurrentTime(target);
+    onSentenceChange(idx);
+    if (audioRef.current) {
+      audioRef.current.currentTime = target;
+      if (!isPlaying) {
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      }
+    }
+  };
+
+  const prevSentence = () => {
+    if (sentences.length === 0) return;
+    const targetIdx = activeSentenceIndex > 0 ? activeSentenceIndex - 1 : 0;
+    jumpToSentence(targetIdx);
+  };
+
+  const nextSentence = () => {
+    if (sentences.length === 0) return;
+    const targetIdx =
+      activeSentenceIndex >= 0 && activeSentenceIndex < sentences.length - 1
+        ? activeSentenceIndex + 1
+        : 0;
+    jumpToSentence(targetIdx);
+  };
+
+  const rewind10 = () => {
+    if (!audioRef.current) return;
+    const target = Math.max(0, audioRef.current.currentTime - 10);
+    audioRef.current.currentTime = target;
+    setCurrentTime(target);
+  };
+
+  const forward10 = () => {
+    if (!audioRef.current) return;
+    const target = Math.min(duration, audioRef.current.currentTime + 10);
+    audioRef.current.currentTime = target;
+    setCurrentTime(target);
+  };
+
+  const changeSpeed = (newRate: number) => {
+    setRate(newRate);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = newRate;
+    }
+  };
+
+  const handleVolumeChange = (v: number) => {
+    setVolume(v);
+    setIsMuted(v === 0);
+    if (audioRef.current) {
+      audioRef.current.volume = v;
+    }
+  };
+
+  const toggleMute = () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    if (audioRef.current) {
+      audioRef.current.volume = nextMuted ? 0 : volume;
+    }
+  };
+
+  const handleLanguageSelect = (newLang: "en" | "hi" | "or") => {
+    if (newLang === lang && audioUrl) return;
+    setLang(newLang);
+    stopPlayback();
+    fetchAudio(newLang, isPlaying);
+  };
+
+  const progress = duration > 0 ? Math.min(1, currentTime / duration) : 0;
+  const currentSentence =
+    activeSentenceIndex >= 0 && sentences[activeSentenceIndex]
+      ? sentences[activeSentenceIndex]
+      : null;
 
   return (
-    <div className="card overflow-hidden">
-      <div className="flex items-center gap-3 p-4 sm:p-5">
-        <button
-          onClick={toggle}
-          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 tap"
-          style={{ background: "var(--card-dark)", color: "var(--card)" }}
+    <div className="card overflow-hidden transition-all shadow-sm border border-[var(--border)]">
+      {/* Hidden HTML5 Audio Element */}
+      <audio
+        ref={audioRef}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+        preload="metadata"
+      />
+
+      {/* Top Header: Badge & Language Selector */}
+      <div
+        className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[var(--border)] bg-[var(--bg)]/50"
+      >
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[var(--accent-purple)] animate-pulse" />
+          <span
+            className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5"
+            style={{ color: "var(--text)" }}
+          >
+            Story Narration
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-[var(--accent-purple)] border border-[var(--border)] hidden sm:inline-block">
+              Neural Audio
+            </span>
+          </span>
+        </div>
+
+        {/* Language Selector Pills */}
+        <div className="flex items-center gap-1 bg-white dark:bg-zinc-900 p-0.5 rounded-xl border border-[var(--border)]">
+          {TTS_LANGUAGES.map((l) => (
+            <button
+              key={l.code}
+              onClick={() => handleLanguageSelect(l.code)}
+              disabled={isLoading}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all tap ${
+                lang === l.code
+                  ? "bg-[var(--text)] text-[var(--card)] shadow-xs"
+                  : "text-[var(--text-mid)] hover:text-[var(--text)]"
+              }`}
+              title={`Switch narration to ${l.name}`}
+            >
+              <span className="text-[12px]">{l.flag}</span>
+              <span>{l.code.toUpperCase()}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Scrubber and Waveform */}
+      <div className="px-4 sm:px-5 pt-4 pb-2">
+        <div className="flex items-center justify-between mb-1.5 text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-mid)" }}>
+          <span>{fmt(currentTime)}</span>
+          <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-soft)]">
+            {isLoading ? "Synthesizing..." : isPlaying ? "Playing" : "Ready"}
+          </span>
+          <span>{fmt(duration)}</span>
+        </div>
+
+        {/* Waveform Scrubber */}
+        <div className="flex items-center gap-3">
+          <Waveform progress={progress} playing={isPlaying} onSeek={seek} />
+        </div>
+      </div>
+
+      {/* Control Buttons Bar */}
+      <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3">
+        {/* Left Side: Jump Sentence Controls */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={prevSentence}
+            disabled={isLoading || sentences.length === 0}
+            className="w-8 h-8 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-40 transition-colors"
+            title="Previous sentence"
+            aria-label="Previous sentence"
+          >
+            <i className="ri-skip-back-line text-sm" />
+          </button>
+          <button
+            onClick={rewind10}
+            disabled={isLoading}
+            className="w-8 h-8 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-40 transition-colors"
+            title="Rewind 10 seconds"
+            aria-label="Rewind 10 seconds"
+          >
+            <span className="text-[10px] font-bold">-10s</span>
+          </button>
+        </div>
+
+        {/* Center: Primary Play/Pause & Stop */}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={togglePlay}
+            disabled={isLoading}
+            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 tap shadow-md transition-transform hover:scale-105 active:scale-95"
+            style={{ background: "var(--card-dark)", color: "var(--card)" }}
+            title={isPlaying ? "Pause" : "Play narration"}
+            aria-label={isPlaying ? "Pause" : "Play narration"}
+          >
+            {isLoading ? (
+              <i className="ri-loader-4-line text-xl animate-spin" />
+            ) : (
+              <i
+                className={`${isPlaying ? "ri-pause-fill" : "ri-play-fill"} text-xl`}
+                style={isPlaying ? {} : { marginLeft: 2 }}
+              />
+            )}
+          </button>
+
+          {isPlaying && (
+            <button
+              onClick={stopPlayback}
+              className="w-9 h-9 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              title="Stop playback"
+              aria-label="Stop playback"
+            >
+              <i className="ri-stop-fill text-sm" />
+            </button>
+          )}
+        </div>
+
+        {/* Right Side: Forward Controls & Settings Toggle */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={forward10}
+            disabled={isLoading}
+            className="w-8 h-8 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-40 transition-colors"
+            title="Forward 10 seconds"
+            aria-label="Forward 10 seconds"
+          >
+            <span className="text-[10px] font-bold">+10s</span>
+          </button>
+          <button
+            onClick={nextSentence}
+            disabled={isLoading || sentences.length === 0}
+            className="w-8 h-8 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-40 transition-colors"
+            title="Next sentence"
+            aria-label="Next sentence"
+          >
+            <i className="ri-skip-forward-line text-sm" />
+          </button>
+
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="w-8 h-8 rounded-full flex items-center justify-center tap ml-1 transition-colors"
+            style={{
+              background: showSettings ? "var(--card-dark)" : "var(--bg)",
+              color: showSettings ? "var(--card)" : "var(--text-mid)",
+            }}
+            title="Audio settings (Speed & Volume)"
+            aria-label="Audio settings"
+          >
+            <i className="ri-equalizer-3-line text-xs" />
+          </button>
+        </div>
+      </div>
+
+      {/* Synchronized Sentence Highlighting Banner */}
+      {currentSentence && (
+        <div
+          className="mx-4 sm:mx-5 mb-3 p-3 rounded-xl bg-[var(--bg)] border border-[var(--border)] flex items-start gap-2.5 slide-up"
         >
           <i
-            className={`${playing ? "ri-pause-fill" : "ri-play-fill"} text-lg`}
-            style={playing ? {} : { marginLeft: 2 }}
+            className="ri-double-quotes-l text-base flex-shrink-0 mt-0.5"
+            style={{ color: "var(--accent-purple)" }}
           />
-        </button>
-        <div className="flex-1 min-w-0 flex flex-col gap-1">
-          <div className="flex items-center justify-between">
-            <span
-              className="text-[11px] font-bold uppercase tracking-widest"
-              style={{ color: "var(--text-soft)" }}
-            >
-              Audio
-            </span>
-            <span
-              className="text-[11px] font-semibold tabular-nums"
-              style={{ color: "var(--text-mid)" }}
-            >
-              {playing || progress > 0 ? fmt(curTime) : fmt(duration)}
-            </span>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between mb-1">
+              <span
+                className="text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: "var(--accent-purple)" }}
+              >
+                Now Reading
+              </span>
+              <span className="text-[10px] font-semibold text-[var(--text-soft)]">
+                Sentence {currentSentence.index + 1} of {sentences.length}
+              </span>
+            </div>
+            <p className="text-[12.5px] font-medium leading-relaxed line-clamp-2 text-[var(--text)]">
+              {currentSentence.text}
+            </p>
           </div>
-          <Waveform progress={progress} playing={playing} onSeek={seek} />
         </div>
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          className="w-9 h-9 rounded-full flex items-center justify-center tap"
-          style={{
-            background: showSettings ? "var(--card-dark)" : "var(--bg)",
-            color: showSettings ? "var(--card)" : "var(--text-mid)",
-          }}
-        >
-          <i className="ri-equalizer-3-line text-sm" />
-        </button>
-      </div>
+      )}
+
+      {/* Settings Tray: Speed & Volume */}
       {showSettings && (
         <div
-          className="px-4 sm:px-5 py-4 space-y-3 slide-up"
-          style={{ borderTop: "1px solid var(--border)" }}
+          className="px-4 sm:px-5 py-3.5 space-y-3.5 bg-[var(--bg)]/60 border-t border-[var(--border)] slide-up"
         >
+          {/* Speed Selection */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span
               className="text-[11px] font-bold uppercase tracking-widest"
@@ -599,14 +885,12 @@ const AudioCard: React.FC<{ text: string }> = ({ text }) => {
               {[0.75, 1, 1.25, 1.5, 2].map((r) => (
                 <button
                   key={r}
-                  onClick={() => {
-                    setRate(r);
-                    if (playing) stop();
-                  }}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold tap"
+                  onClick={() => changeSpeed(r)}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold tap transition-all"
                   style={{
-                    background: rate === r ? "var(--text)" : "var(--bg)",
+                    background: rate === r ? "var(--text)" : "var(--card)",
                     color: rate === r ? "var(--card)" : "var(--text-mid)",
+                    border: "1px solid var(--border)",
                   }}
                 >
                   {r}×
@@ -614,35 +898,45 @@ const AudioCard: React.FC<{ text: string }> = ({ text }) => {
               ))}
             </div>
           </div>
-          {voices.length > 0 && (
-            <div className="flex items-center justify-between gap-3">
-              <span
-                className="text-[11px] font-bold uppercase tracking-widest flex-shrink-0"
-                style={{ color: "var(--text-soft)" }}
+
+          {/* Volume Control */}
+          <div className="flex items-center justify-between gap-3">
+            <span
+              className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5"
+              style={{ color: "var(--text-soft)" }}
+            >
+              Volume
+            </span>
+            <div className="flex items-center gap-2 flex-1 max-w-[200px]">
+              <button
+                onClick={toggleMute}
+                className="w-7 h-7 rounded-lg flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)]"
+                title={isMuted ? "Unmute" : "Mute"}
               >
-                Voice
+                <i
+                  className={
+                    isMuted || volume === 0
+                      ? "ri-volume-mute-line text-sm text-red-500"
+                      : volume < 0.5
+                      ? "ri-volume-down-line text-sm"
+                      : "ri-volume-up-line text-sm"
+                  }
+                />
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={isMuted ? 0 : volume}
+                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                className="w-full accent-[var(--accent-purple)] h-1.5 bg-[var(--border-hover)] rounded-lg cursor-pointer"
+              />
+              <span className="text-[10px] font-bold tabular-nums w-7 text-right text-[var(--text-mid)]">
+                {Math.round((isMuted ? 0 : volume) * 100)}%
               </span>
-              <select
-                value={voiceName}
-                onChange={(e) => {
-                  setVoiceName(e.target.value);
-                  if (playing) stop();
-                }}
-                className="text-xs font-semibold rounded-lg px-3 py-1.5 outline-none flex-1 max-w-[200px]"
-                style={{
-                  background: "var(--bg)",
-                  color: "var(--text)",
-                  border: "1px solid var(--border)",
-                }}
-              >
-                {voices.map((v) => (
-                  <option key={v.name} value={v.name}>
-                    {v.name.length > 28 ? v.name.slice(0, 28) + "…" : v.name}
-                  </option>
-                ))}
-              </select>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
@@ -1485,6 +1779,10 @@ export const StoryRead: React.FC = () => {
   const [fontOpen, setFontOpen] = useState(false);
   const [fontSize, setFontSize] = useState<FontSize>("base");
 
+  const [activeSentenceIndex, setActiveSentenceIndex] = useState<number>(-1);
+  const [ttsSentences, setTtsSentences] = useState<SentenceTiming[]>([]);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"new" | "top">("new");
 
@@ -1528,6 +1826,53 @@ export const StoryRead: React.FC = () => {
   useEffect(() => {
     localStorage.setItem("story_fs", fontSize);
   }, [fontSize]);
+
+  // Synchronized Sentence Highlighting in Story Body
+  useEffect(() => {
+    if (!bodyRef.current) return;
+    const root = bodyRef.current;
+
+    // Clean old highlights
+    const oldMarks = root.querySelectorAll("mark.tts-highlight");
+    oldMarks.forEach((m) => {
+      const parent = m.parentNode;
+      if (parent) {
+        while (m.firstChild) {
+          parent.insertBefore(m.firstChild, m);
+        }
+        parent.removeChild(m);
+        parent.normalize();
+      }
+    });
+
+    if (activeSentenceIndex < 0 || !ttsSentences[activeSentenceIndex]) return;
+
+    const sentenceText = ttsSentences[activeSentenceIndex].text.trim();
+    if (!sentenceText) return;
+
+    // Search text nodes
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+    let node: Text | null;
+    const searchPrefix = sentenceText.slice(0, Math.min(sentenceText.length, 30));
+
+    while ((node = walker.nextNode() as Text | null)) {
+      const content = node.textContent || "";
+      const idx = content.indexOf(searchPrefix);
+      if (idx !== -1) {
+        const matchLength = Math.min(content.length - idx, sentenceText.length);
+        try {
+          const range = document.createRange();
+          range.setStart(node, idx);
+          range.setEnd(node, idx + matchLength);
+          const mark = document.createElement("mark");
+          mark.className = "tts-highlight";
+          range.surroundContents(mark);
+          mark.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        } catch {}
+        break;
+      }
+    }
+  }, [activeSentenceIndex, ttsSentences]);
 
   useEffect(() => {
     const fn = (e: MouseEvent) => {
@@ -2285,9 +2630,15 @@ export const StoryRead: React.FC = () => {
               </div>
             )}
 
-            {/* Audio */}
+            {/* Audio Player */}
             <div className="mb-8">
-              <AudioCard text={audioText} />
+              <StoryAudioPlayer
+                text={audioText}
+                storyId={story._id}
+                activeSentenceIndex={activeSentenceIndex}
+                onSentenceChange={(idx) => setActiveSentenceIndex(idx)}
+                onSentencesLoaded={(s) => setTtsSentences(s)}
+              />
             </div>
 
             {/* Translation notice */}
@@ -2322,7 +2673,7 @@ export const StoryRead: React.FC = () => {
             )}
 
             {/* Body */}
-            <div className={`body-content ${fsClass}`}>
+            <div ref={bodyRef} className={`body-content ${fsClass}`}>
               {translatedText ? (
                 <div>
                   {translatedText
