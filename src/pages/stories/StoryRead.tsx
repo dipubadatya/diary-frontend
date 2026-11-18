@@ -84,7 +84,7 @@ const css = `
 
   :root {
     /* Reference palette — soft lavender bg, pure white cards, deep black accents */
-    --bg: #F5F4F8;
+    --bg: ##fafafa;
     --card: #FFFFFF;
     --card-dark: #0F1114;
     --border: #EEEDF2;
@@ -600,7 +600,7 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
     if (audioRef.current) {
       audioRef.current.currentTime = target;
       if (!isPlaying) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => { });
       }
     }
   };
@@ -613,7 +613,7 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
     if (audioRef.current) {
       audioRef.current.currentTime = target;
       if (!isPlaying) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => { });
       }
     }
   };
@@ -718,11 +718,10 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
               key={l.code}
               onClick={() => handleLanguageSelect(l.code)}
               disabled={isLoading}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all tap ${
-                lang === l.code
-                  ? "bg-[var(--text)] text-[var(--card)] shadow-xs"
-                  : "text-[var(--text-mid)] hover:text-[var(--text)]"
-              }`}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all tap ${lang === l.code
+                ? "bg-[var(--text)] text-[var(--card)] shadow-xs"
+                : "text-[var(--text-mid)] hover:text-[var(--text)]"
+                }`}
               title={`Switch narration to ${l.name}`}
             >
               <span className="text-[12px]">{l.flag}</span>
@@ -918,8 +917,8 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
                     isMuted || volume === 0
                       ? "ri-volume-mute-line text-sm text-red-500"
                       : volume < 0.5
-                      ? "ri-volume-down-line text-sm"
-                      : "ri-volume-up-line text-sm"
+                        ? "ri-volume-down-line text-sm"
+                        : "ri-volume-up-line text-sm"
                   }
                 />
               </button>
@@ -1783,6 +1782,9 @@ export const StoryRead: React.FC = () => {
   const [ttsSentences, setTtsSentences] = useState<SentenceTiming[]>([]);
   const bodyRef = useRef<HTMLDivElement>(null);
 
+  const [showLikeAuthPrompt, setShowLikeAuthPrompt] = useState(false);
+  const likePromptRef = useRef<HTMLDivElement>(null);
+
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"new" | "top">("new");
 
@@ -1868,7 +1870,7 @@ export const StoryRead: React.FC = () => {
           mark.className = "tts-highlight";
           range.surroundContents(mark);
           mark.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        } catch {}
+        } catch { }
         break;
       }
     }
@@ -1880,10 +1882,19 @@ export const StoryRead: React.FC = () => {
         setMoreOpen(false);
       if (likedByRef.current && !likedByRef.current.contains(e.target as Node))
         setLikedByOpen(false);
+      if (likePromptRef.current && !likePromptRef.current.contains(e.target as Node))
+        setShowLikeAuthPrompt(false);
     };
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
   }, []);
+
+  // Auto-dismiss like prompt after delay if not dismissed manually
+  useEffect(() => {
+    if (!showLikeAuthPrompt) return;
+    const timer = setTimeout(() => setShowLikeAuthPrompt(false), 6000);
+    return () => clearTimeout(timer);
+  }, [showLikeAuthPrompt]);
 
   useEffect(() => {
     if (!socket || !id) return;
@@ -1962,6 +1973,11 @@ export const StoryRead: React.FC = () => {
 
   const handleLike = async () => {
     if (!story) return;
+    if (!user) {
+      setShowLikeAuthPrompt(true);
+      return;
+    }
+    setShowLikeAuthPrompt(false);
     const prev = isLiked;
     setIsLiked(!prev);
     setLikesCount((c) => (prev ? c - 1 : c + 1));
@@ -2709,19 +2725,60 @@ export const StoryRead: React.FC = () => {
             {/* Actions Card */}
             <div className="card p-2 flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1">
-                <button
-                  onClick={handleLike}
-                  className="flex items-center gap-2 h-10 px-4 rounded-full text-sm font-bold tap transition-all"
-                  style={{
-                    background: isLiked ? "#FEE2E2" : "transparent",
-                    color: isLiked ? "var(--accent-red)" : "var(--text)",
-                  }}
-                >
-                  <i
-                    className={`${isLiked ? "ri-heart-3-fill" : "ri-heart-3-line"} text-base ${likeAnim ? "heart-pop" : ""}`}
-                  />
-                  {likesCount}
-                </button>
+                <div className="relative inline-flex items-center" ref={likePromptRef}>
+                  <button
+                    onClick={handleLike}
+                    className="flex items-center gap-2 h-10 px-4 rounded-full text-sm font-bold tap transition-all"
+                    style={{
+                      background: isLiked ? "#FEE2E2" : "transparent",
+                      color: isLiked ? "var(--accent-red)" : "var(--text)",
+                    }}
+                  >
+                    <i
+                      className={`${isLiked ? "ri-heart-3-fill" : "ri-heart-3-line"} text-base ${likeAnim ? "heart-pop" : ""}`}
+                    />
+                    {likesCount}
+                  </button>
+
+                  {/* Inline Unauthenticated Like Prompt */}
+                  {showLikeAuthPrompt && (
+                    <div
+                      className="absolute left-0 bottom-full mb-2.5 z-40 scale-in flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl border shadow-lg max-w-[calc(100vw-2rem)] whitespace-nowrap"
+                      style={{
+                        background: "var(--card)",
+                        borderColor: "var(--border)",
+                        boxShadow: "var(--shadow-lg)",
+                      }}
+                      role="tooltip"
+                    >
+                      <span
+                        className="text-xs font-semibold select-none"
+                        style={{ color: "var(--text)" }}
+                      >
+                        Sign in to show some love ❤️
+                      </span>
+                      <Link
+                        to="/login"
+                        state={{ from: `/stories/${story._id}` }}
+                        className="px-2.5 py-1 rounded-full text-xs font-bold tap transition-all hover:opacity-90"
+                        style={{
+                          background: "var(--card-dark)",
+                          color: "var(--card)",
+                        }}
+                      >
+                        Log in
+                      </Link>
+                      {/* Downward Caret Indicator */}
+                      <span
+                        className="absolute -bottom-1.5 left-5 w-3 h-3 rotate-45 border-r border-b pointer-events-none"
+                        style={{
+                          background: "var(--card)",
+                          borderColor: "var(--border)",
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
                 <div className="relative" ref={likedByRef}>
                   <button
                     onClick={openLikedBy}
