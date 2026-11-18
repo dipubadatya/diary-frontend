@@ -24,7 +24,7 @@ import { DiaryCalendar } from "./pages/calendar/DiaryCalendar";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { NotFound } from "./components/NotFound";
-import { DiarySplash } from "./components/DiarySplash";
+import { DiaryIntroAnimation } from "./components/DiaryIntroAnimation";
 import { MainLayout } from "./layouts/MainLayout";
 
 const SPLASH_SESSION_KEY = "diary-splash-shown";
@@ -69,7 +69,7 @@ function App() {
             }}
           />
 
-          {!appReady && <DiarySplash onComplete={handleSplashDone} />}
+          {!appReady && <DiaryIntroAnimation onComplete={handleSplashDone} />}
 
           <ErrorBoundary>
             <div
