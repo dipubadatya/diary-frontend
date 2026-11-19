@@ -23,25 +23,22 @@ const compactMobilePages =
       <GlobalNavbar />
 
     <main
-  className={`
-    flex-1 w-full
-    ${
-      compactMobilePages
-        ? "pt-0 lg:pt-[88px]"
-        : "pt-[76px] sm:pt-[88px]"
-    }
-    ${
-      isChat
-        ? "flex flex-col h-[calc(100dvh-76px)] sm:h-[calc(100dvh-88px)] overflow-hidden"
-        : isWrite
-          ? "pb-24 lg:pb-8"
-          : "pb-[100px] lg:pb-8"
-    }
-    transition-all
-  `}
->
-  <Outlet />
-</main>
+      className={`
+        flex-1 w-full
+        ${
+          isChat
+            ? "flex flex-col h-[calc(100dvh-76px)] lg:h-screen pt-0 lg:pt-[84px] lg:pb-3 overflow-hidden min-h-0"
+            : compactMobilePages
+              ? "pt-0 lg:pt-[88px] pb-[100px] lg:pb-8"
+              : isWrite
+                ? "pt-[76px] sm:pt-[88px] pb-24 lg:pb-8"
+                : "pt-[76px] sm:pt-[88px] pb-[100px] lg:pb-8"
+        }
+        transition-all
+      `}
+    >
+      <Outlet />
+    </main>
     </div>
   );
 }

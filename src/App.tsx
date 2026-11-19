@@ -75,8 +75,8 @@ function App() {
             <div
               className={
                 appReady
-                  ? "opacity-100 transition-opacity duration-500"
-                  : "opacity-0 pointer-events-none"
+                  ? "opacity-100 transition-opacity duration-500 min-h-screen flex flex-col"
+                  : "opacity-0 pointer-events-none min-h-screen flex flex-col"
               }
             >
               <BrowserRouter>
