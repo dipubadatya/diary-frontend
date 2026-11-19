@@ -520,7 +520,6 @@ import {
   Search as SearchIcon,
   X,
   Loader2,
-  ArrowUpRight,
   CornerDownLeft,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
