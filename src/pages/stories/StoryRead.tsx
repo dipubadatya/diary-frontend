@@ -1,3 +1,6 @@
+
+
+
 import React, {
   useState,
   useEffect,
@@ -71,11 +74,11 @@ const LANGUAGES = [
   { code: "zh", name: "Chinese", flag: "🇨🇳" },
 ];
 
-const FONT_OPTIONS: { key: FontSize; label: string; preview: string }[] = [
-  { key: "sm", label: "Compact", preview: "15px" },
-  { key: "base", label: "Default", preview: "17px" },
-  { key: "lg", label: "Relaxed", preview: "20px" },
-  { key: "xl", label: "Spacious", preview: "24px" },
+const FONT_OPTIONS: { key: FontSize; label: string; desc: string; preview: string }[] = [
+  { key: "sm", label: "Compact", desc: " tighter spacing for quick scanning", preview: "15px" },
+  { key: "base", label: "Default", desc: "Balanced editorial reading size", preview: "17px" },
+  { key: "lg", label: "Relaxed", desc: "Larger type for long-form comfort", preview: "19px" },
+  { key: "xl", label: "Spacious", desc: "Maximum legibility and air", preview: "22px" },
 ];
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -83,139 +86,162 @@ const css = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap');
 
   :root {
-    /* Reference palette — soft lavender bg, pure white cards, deep black accents */
-    --bg: ##fafafa;
+    --bg: #FAFAFA;
     --card: #FFFFFF;
-    --card-dark: #0F1114;
-    --border: #EEEDF2;
-    --border-hover: #E4E3E9;
-
-    --text: #14151A;
-    --text-mid: #6B7280;
-    --text-soft: #9CA3AF;
-    --text-muted: #C4C6CC;
-
-    --accent-red: #F56565;
-    --accent-purple: #7B7FE8;
-    --accent-green: #4AD990;
-
-    --shadow-sm: 0 1px 2px rgba(20, 21, 26, 0.04);
-    --shadow-md: 0 4px 16px rgba(20, 21, 26, 0.06);
-    --shadow-lg: 0 12px 40px rgba(20, 21, 26, 0.08);
-    --shadow-xl: 0 20px 60px rgba(20, 21, 26, 0.10);
-
-    --radius-sm: 12px;
-    --radius-md: 16px;
-    --radius-lg: 20px;
+    --card-dark: #111317;
+    --border: #EAEAEB;
+    --border-hover: #DCDCE0;
+    --text: #111317;
+    --text-main: #111317;
+    --text-mid: #525866;
+    --text-soft: #868C98;
+    --text-muted: #C2C6CE;
+    --accent-red: #E5484D;
+    --accent-purple: #5E6AD2;
+    --accent-green: #2E9F6E;
+    --shadow-sm: 0 1px 2px rgba(17, 19, 23, 0.04);
+    --shadow-md: 0 4px 14px rgba(17, 19, 23, 0.06);
+    --shadow-lg: 0 12px 32px rgba(17, 19, 23, 0.09);
+    --shadow-xl: 0 24px 56px rgba(17, 19, 23, 0.14);
+    --radius-sm: 10px;
+    --radius-md: 14px;
+    --radius-lg: 18px;
     --radius-xl: 24px;
     --radius-full: 9999px;
-
-    --font: 'Manrope', 'Inter', system-ui, sans-serif;
+    --font: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .dark {
-    --bg: #0A0B0F;
-    --card: #14161B;
-    --card-dark: #FFFFFF;
-    --border: #22252C;
-    --border-hover: #2C3038;
-    --text: #F5F6F8;
-    --text-mid: #A8ABB4;
-    --text-soft: #737680;
-    --text-muted: #4A4D55;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
-    --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
-    --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
-    --shadow-xl: 0 20px 60px rgba(0,0,0,0.6);
+    --bg: #0B0C0E;
+    --card: #131519;
+    --card-dark: #F5F6F8;
+    --border: #22252B;
+    --border-hover: #2E323B;
+    --text: #F3F4F6;
+    --text-main: #F3F4F6;
+    --text-mid: #9EA4B0;
+    --text-soft: #6E7480;
+    --text-muted: #454A54;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.55);
+    --shadow-xl: 0 24px 60px rgba(0, 0, 0, 0.7);
   }
 
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-  /* ── Progress ── */
+  /* ── Reading Progress Bar ── */
   .progress {
-    position: fixed; top: 0; left: 0; right: 0; height: 3px;
-    background: var(--text); transform-origin: left; z-index: 9999;
-    transition: width 0.1s;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2.5px;
+    background: var(--text);
+    transform-origin: left;
+    z-index: 9999;
+    transition: width 0.12s ease-out;
   }
 
-  /* ── Story Body ── */
+  /* ── Story Editorial Body ── */
   .body-content {
     font-family: var(--font);
     color: var(--text);
     line-height: 1.85;
     letter-spacing: -0.011em;
+    word-break: break-word;
   }
-  .body-content p { margin: 0 0 1.5em; }
+  .body-content p { margin: 0 0 1.45em; }
   .body-content p:last-child { margin-bottom: 0; }
   .body-content p:empty { display: none; }
   .body-content h1, .body-content h2, .body-content h3,
   .body-content h4, .body-content h5, .body-content h6 {
     font-weight: 800;
     line-height: 1.25;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.022em;
     color: var(--text);
-    margin: 2em 0 0.6em;
+    margin: 1.9em 0 0.6em;
   }
-  .body-content h1 { font-size: 1.9em; }
-  .body-content h2 { font-size: 1.55em; }
-  .body-content h3 { font-size: 1.3em; }
+  .body-content h1 { font-size: 1.8em; }
+  .body-content h2 { font-size: 1.5em; }
+  .body-content h3 { font-size: 1.25em; }
   .body-content strong { font-weight: 700; color: var(--text); }
   .body-content em { font-style: italic; }
-  .body-content a { color: var(--accent-purple); text-decoration: underline; text-underline-offset: 3px; }
+  .body-content a {
+    color: var(--text);
+    text-decoration: underline;
+    text-decoration-color: var(--border-hover);
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.15s;
+  }
+  .body-content a:hover {
+    text-decoration-color: var(--text);
+  }
+
   /* ── Synchronized Audio Sentence Highlighting ── */
   mark.tts-highlight {
-    background: rgba(123, 127, 232, 0.22) !important;
+    background: rgba(94, 106, 210, 0.16) !important;
     color: inherit !important;
-    border-bottom: 2.5px solid var(--accent-purple);
-    border-radius: 4px;
-    padding: 1.5px 3px;
-    box-shadow: 0 0 12px rgba(123, 127, 232, 0.25);
-    transition: all 0.2s ease;
+    border-bottom: 2px solid var(--accent-purple);
+    border-radius: 3px;
+    padding: 1px 2px;
+    transition: background 0.2s ease;
   }
 
   .body-content ul, .body-content ol { margin: 1em 0 1.5em; padding-left: 1.5rem; }
   .body-content ul { list-style: disc; }
   .body-content ol { list-style: decimal; }
-  .body-content li { margin-bottom: .4em; }
+  .body-content li { margin-bottom: 0.45em; }
   .body-content blockquote {
     margin: 1.75em 0;
-    padding: 1.2rem 1.4rem;
-    background: var(--bg);
-    border-radius: var(--radius-md);
+    padding: 1rem 1.35rem;
+    background: var(--card);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
     border-left: 3px solid var(--text);
     font-style: italic;
     color: var(--text-mid);
   }
   .body-content code {
-    font-family: 'JetBrains Mono', monospace;
-    background: var(--bg);
-    padding: .15em .4em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 0.15em 0.4em;
     border-radius: 6px;
-    font-size: .88em;
+    font-size: 0.86em;
   }
   .body-content pre {
-    background: var(--card-dark);
-    color: #F5F6F8;
+    background: #111317;
+    color: #F3F4F6;
     border-radius: var(--radius-md);
-    padding: 1.25rem 1.5rem;
+    padding: 1.15rem 1.35rem;
     overflow-x: auto;
     margin: 1.5em 0;
-    font-size: .88em;
-    line-height: 1.7;
+    font-size: 0.86em;
+    line-height: 1.65;
+    border: 1px solid var(--border);
   }
-  .body-content pre code { background: none; padding: 0; }
-  .body-content img { max-width: 100%; height: auto; border-radius: var(--radius-md); margin: 1.5em auto; display: block; }
-  .body-content hr { border: none; height: 1px; background: var(--border); margin: 2em 0; }
+  .body-content pre code { background: none; border: none; padding: 0; color: inherit; }
+  .body-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+    margin: 1.75em auto;
+    display: block;
+    border: 1px solid var(--border);
+  }
+  .body-content hr { border: none; height: 1px; background: var(--border); margin: 2.25em 0; }
   .body-content .ql-align-center { text-align: center; }
   .body-content .ql-align-right { text-align: right; }
   .body-content .ql-align-justify { text-align: justify; }
   .body-content .ql-video {
-    width: 100%; aspect-ratio: 16/9;
-    border-radius: var(--radius-md); border: none; margin: 1.5em 0;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: var(--radius-md);
+    border: none;
+    margin: 1.5em 0;
   }
 
   .fs-sm   { font-size: 15px !important; }
@@ -223,106 +249,77 @@ const css = `
   .fs-lg   { font-size: 19px !important; }
   .fs-xl   { font-size: 22px !important; }
   @media (max-width: 640px) {
-    .fs-sm   { font-size: 14px !important; }
+    .fs-sm   { font-size: 14.5px !important; }
     .fs-base { font-size: 16px !important; }
     .fs-lg   { font-size: 18px !important; }
     .fs-xl   { font-size: 20px !important; }
   }
 
-  /* ── Reusable primitives ── */
+  /* ── Reusable Surfaces & Controls ── */
   .card {
     background: var(--card);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-  }
-  .card-flat {
-    background: var(--card);
-    border-radius: var(--radius-lg);
     border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
   }
-
   .pill-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    height: 40px;
-    padding: 0 16px;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
     background: var(--card);
     color: var(--text);
+    border: 1px solid var(--border);
     border-radius: var(--radius-full);
     font-family: var(--font);
     font-weight: 600;
     font-size: 13px;
-    box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: all 0.18s ease;
+    transition: all 0.15s ease;
     white-space: nowrap;
   }
-  .pill-btn:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .pill-btn:hover { border-color: var(--border-hover); }
   .pill-btn:active { transform: scale(0.97); }
-
   .pill-btn-dark {
-    background: var(--card-dark);
+    background: var(--text);
     color: var(--card);
+    border-color: transparent;
   }
-  .dark .pill-btn-dark { color: var(--text); }
+  .pill-btn-dark:hover { opacity: 0.92; }
 
-  .icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: var(--card);
-    color: var(--text);
-    border-radius: var(--radius-full);
-    box-shadow: var(--shadow-sm);
-    cursor: pointer;
-    transition: all 0.18s ease;
-  }
-  .icon-btn:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-  .icon-btn:active { transform: scale(0.94); }
-
-  .icon-btn-dark {
-    background: var(--card-dark);
-    color: var(--card);
-  }
-  .dark .icon-btn-dark { color: var(--text); }
-
-  .tap { transition: transform 0.12s, opacity 0.15s; cursor: pointer; }
-  .tap:active { transform: scale(0.96); opacity: 0.85; }
+  .tap { transition: transform 0.12s ease, opacity 0.15s ease; cursor: pointer; }
+  .tap:active { transform: scale(0.96); }
 
   /* ── Animations ── */
   @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   @keyframes scaleIn {
-    from { opacity: 0; transform: scale(0.94); }
+    from { opacity: 0; transform: scale(0.96); }
     to   { opacity: 1; transform: scale(1); }
   }
   @keyframes slideUp {
-    from { opacity: 0; transform: translateY(16px); }
+    from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   @keyframes heartPop {
-    0% { transform: scale(1); }
-    30% { transform: scale(1.4); }
-    60% { transform: scale(0.9); }
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.35); }
+    60%  { transform: scale(0.92); }
     100% { transform: scale(1); }
   }
   @keyframes wave {
-    0%,100% { transform: scaleY(1); }
-    50%     { transform: scaleY(1.7); }
+    0%, 100% { transform: scaleY(1); }
+    50%      { transform: scaleY(1.55); }
   }
-  .fade-in   { animation: fadeIn 0.5s cubic-bezier(.16,1,.3,1) both; }
-  .scale-in  { animation: scaleIn 0.22s cubic-bezier(.16,1,.3,1) both; }
-  .slide-up  { animation: slideUp 0.32s cubic-bezier(.16,1,.3,1) both; }
-  .heart-pop { animation: heartPop 0.42s cubic-bezier(.36,.07,.19,.97); }
+  .fade-in   { animation: fadeIn 0.4s cubic-bezier(.16,1,.3,1) both; }
+  .scale-in  { animation: scaleIn 0.18s cubic-bezier(.16,1,.3,1) both; }
+  .slide-up  { animation: slideUp 0.25s cubic-bezier(.16,1,.3,1) both; }
+  .heart-pop { animation: heartPop 0.38s cubic-bezier(.36,.07,.19,.97); }
   .wave-bar  { animation: wave 0.65s ease-in-out infinite; transform-origin: center; }
-
-  textarea { field-sizing: content; resize: none; }
 `;
 
 // ─── Reading Progress ────────────────────────────────────────────────────────
@@ -351,12 +348,14 @@ const Avatar: React.FC<{
   <img
     src={
       src ||
-      `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=14151A&color=FFF&size=80&bold=true`
+      `https://ui-avatars.com/api/?name=${encodeURIComponent(
+        name || "U",
+      )}&background=111317&color=FFF&size=96&bold=true`
     }
-    alt=""
+    alt={name}
     loading="lazy"
     style={{ width: size, height: size }}
-    className={`rounded-full object-cover flex-shrink-0 ${className}`}
+    className={`rounded-full object-cover flex-shrink-0 border border-[var(--border)] ${className}`}
   />
 );
 
@@ -369,11 +368,16 @@ export interface SentenceTiming {
 }
 
 // ─── Supported TTS Languages ──────────────────────────────────────────────────
-const TTS_LANGUAGES: { code: "en" | "hi" | "or"; name: string; native: string; flag: string }[] = [
-  { code: "en", name: "English", native: "English", flag: "🇺🇸" },
-  { code: "hi", name: "Hindi", native: "हिन्दी", flag: "🇮🇳" },
-  { code: "or", name: "Odia", native: "ଓଡ଼ିଆ", flag: "🇮🇳" },
-];
+const TTS_LANGUAGES: {
+  code: "en" | "hi" | "or";
+  name: string;
+  native: string;
+  flag: string;
+}[] = [
+    { code: "en", name: "English", native: "English", flag: "🇺🇸" },
+    { code: "hi", name: "Hindi", native: "हिन्दी", flag: "🇮🇳" },
+    { code: "or", name: "Odia", native: "ଓଡ଼ିଆ", flag: "🇮🇳" },
+  ];
 
 function detectTextLanguage(str: string): "en" | "hi" | "or" {
   let or = 0;
@@ -388,14 +392,18 @@ function detectTextLanguage(str: string): "en" | "hi" | "or" {
   return "en";
 }
 
-// ─── Waveform ────────────────────────────────────────────────────────────────
+// ─── Waveform Scrubber ───────────────────────────────────────────────────────
 const Waveform: React.FC<{
   progress: number;
   playing: boolean;
   onSeek: (p: number) => void;
 }> = ({ progress, playing, onSeek }) => {
   const bars = useMemo(
-    () => Array.from({ length: 48 }, () => 5 + Math.random() * 22),
+    () =>
+      Array.from({ length: 56 }, (_, i) => {
+        const seed = Math.sin(i * 0.55) * 0.5 + 0.5;
+        return Math.round(6 + seed * 18);
+      }),
     [],
   );
   const ref = useRef<HTMLDivElement>(null);
@@ -410,23 +418,24 @@ const Waveform: React.FC<{
     <div
       ref={ref}
       onClick={handleClick}
-      className="flex-1 h-9 flex items-center gap-[2.5px] cursor-pointer overflow-hidden select-none py-1 group"
-      title="Click to seek"
+      className="flex-1 h-8 flex items-center justify-between gap-[2px] cursor-pointer overflow-hidden select-none py-1 group"
+      title="Click anywhere to seek"
     >
       {bars.map((h, i) => {
         const f = i / bars.length;
         const active = f <= progress;
-        const near = playing && Math.abs(f - progress) < 0.04;
+        const near = playing && Math.abs(f - progress) < 0.035;
         return (
           <span
             key={i}
-            className={`transition-all duration-150 ${near ? "wave-bar" : "group-hover:opacity-90"}`}
+            className={`transition-all duration-150 ${near ? "wave-bar" : "group-hover:opacity-90"
+              }`}
             style={{
               display: "inline-block",
-              width: 3,
+              width: 2.5,
               flexShrink: 0,
-              height: near ? Math.min(32, h * 1.35) : h,
-              borderRadius: 3,
+              height: near ? Math.min(28, h * 1.3) : h,
+              borderRadius: 99,
               background: active ? "var(--text)" : "var(--border-hover)",
               transformOrigin: "center",
             }}
@@ -454,8 +463,9 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
   onSentencesLoaded,
 }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const [lang, setLang] = useState<"en" | "hi" | "or">(() => detectTextLanguage(text));
+  const [lang, setLang] = useState<"en" | "hi" | "or">(() =>
+    detectTextLanguage(text),
+  );
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -467,10 +477,8 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
   const [sentences, setSentences] = useState<SentenceTiming[]>([]);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
 
-  // Sync detected language if text changes dramatically
   useEffect(() => {
     setLang(detectTextLanguage(text));
-    // Reset audio state when text changes
     setIsPlaying(false);
     setCurrentTime(0);
     setAudioUrl(null);
@@ -489,8 +497,10 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
     return `${m}:${sec}`;
   };
 
-  // Synthesize or retrieve cached audio from backend
-  const fetchAudio = async (targetLang: "en" | "hi" | "or", autoPlay = false) => {
+  const fetchAudio = async (
+    targetLang: "en" | "hi" | "or",
+    autoPlay = false,
+  ) => {
     setIsLoading(true);
     try {
       const res = await api.post("/tts/synthesize", {
@@ -498,18 +508,15 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
         lang: targetLang,
         storyId,
       });
-
       if (res.data.success) {
         const serverBase = import.meta.env.VITE_SERVER_URL || "";
         const fullUrl = res.data.audioUrl.startsWith("http")
           ? res.data.audioUrl
           : `${serverBase}${res.data.audioUrl}`;
-
         setAudioUrl(fullUrl);
         setDuration(res.data.duration);
         setSentences(res.data.sentences || []);
         onSentencesLoaded(res.data.sentences || []);
-
         if (audioRef.current) {
           audioRef.current.src = fullUrl;
           audioRef.current.playbackRate = rate;
@@ -528,31 +535,37 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
       }
     } catch (err: any) {
       toast.error(
-        err?.response?.data?.error || "Could not generate speech for this story.",
+        err?.response?.data?.error ||
+        "Could not generate speech for this story.",
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Audio element event handlers
   const handleTimeUpdate = () => {
     if (!audioRef.current) return;
     const t = audioRef.current.currentTime;
     setCurrentTime(t);
-
     if (sentences.length > 0) {
       const idx = sentences.findIndex((s) => t >= s.start && t < s.end);
       if (idx !== -1 && idx !== activeSentenceIndex) {
         onSentenceChange(idx);
-      } else if (idx === -1 && t >= (sentences[sentences.length - 1]?.end || 0)) {
+      } else if (
+        idx === -1 &&
+        t >= (sentences[sentences.length - 1]?.end || 0)
+      ) {
         onSentenceChange(-1);
       }
     }
   };
 
   const handleLoadedMetadata = () => {
-    if (audioRef.current && audioRef.current.duration && !isNaN(audioRef.current.duration)) {
+    if (
+      audioRef.current &&
+      audioRef.current.duration &&
+      !isNaN(audioRef.current.duration)
+    ) {
       setDuration(audioRef.current.duration);
     }
   };
@@ -562,15 +575,12 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
     onSentenceChange(-1);
   };
 
-  // Player controls
   const togglePlay = async () => {
     if (!audioUrl) {
       await fetchAudio(lang, true);
       return;
     }
-
     if (!audioRef.current) return;
-
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -578,7 +588,7 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
       try {
         await audioRef.current.play();
         setIsPlaying(true);
-      } catch (e) {
+      } catch {
         toast.error("Playback error. Please try again.");
       }
     }
@@ -595,12 +605,16 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
   };
 
   const seek = (p: number) => {
+    if (!duration) return;
     const target = p * duration;
     setCurrentTime(target);
     if (audioRef.current) {
       audioRef.current.currentTime = target;
       if (!isPlaying) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => { });
+        audioRef.current
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => { });
       }
     }
   };
@@ -613,7 +627,10 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
     if (audioRef.current) {
       audioRef.current.currentTime = target;
       if (!isPlaying) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => { });
+        audioRef.current
+          .play()
+          .then(() => setIsPlaying(true))
+          .catch(() => { });
       }
     }
   };
@@ -684,8 +701,7 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
       : null;
 
   return (
-    <div className="card overflow-hidden transition-all shadow-sm border border-[var(--border)]">
-      {/* Hidden HTML5 Audio Element */}
+    <div className="card overflow-hidden">
       <audio
         ref={audioRef}
         onTimeUpdate={handleTimeUpdate}
@@ -694,198 +710,225 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
         preload="metadata"
       />
 
-      {/* Top Header: Badge & Language Selector */}
-      <div
-        className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[var(--border)] bg-[var(--bg)]/50"
-      >
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[var(--accent-purple)] animate-pulse" />
-          <span
-            className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5"
-            style={{ color: "var(--text)" }}
-          >
-            Story Narration
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-[var(--accent-purple)] border border-[var(--border)] hidden sm:inline-block">
-              Neural Audio
-            </span>
-          </span>
-        </div>
-
-        {/* Language Selector Pills */}
-        <div className="flex items-center gap-1 bg-white dark:bg-zinc-900 p-0.5 rounded-xl border border-[var(--border)]">
-          {TTS_LANGUAGES.map((l) => (
-            <button
-              key={l.code}
-              onClick={() => handleLanguageSelect(l.code)}
-              disabled={isLoading}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all tap ${lang === l.code
-                ? "bg-[var(--text)] text-[var(--card)] shadow-xs"
-                : "text-[var(--text-mid)] hover:text-[var(--text)]"
+      {/* Top Row: Play Trigger + Scrubber + Language & Settings */}
+      <div className="p-3.5 sm:p-4">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full ${isPlaying ? " animate-pulse" : ""
                 }`}
-              title={`Switch narration to ${l.name}`}
+              style={{
+                background: isPlaying
+                  ? "var(--accent-green)"
+                  : "var(--text-soft)",
+              }}
+            />
+            <span
+              className="text-[11.5px] font-bold uppercase tracking-wider"
+              style={{ color: "var(--text)" }}
             >
-              <span className="text-[12px]">{l.flag}</span>
-              <span>{l.code.toUpperCase()}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+              Listen to story
+            </span>
+            {rate !== 1 && (
+              <span
+                className="text-[10.5px] font-semibold px-1.5 py-0.5 rounded"
+                style={{
+                  background: "var(--bg)",
+                  color: "var(--text-mid)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                {rate}×
+              </span>
+            )}
+          </div>
 
-      {/* Main Scrubber and Waveform */}
-      <div className="px-4 sm:px-5 pt-4 pb-2">
-        <div className="flex items-center justify-between mb-1.5 text-[11px] font-semibold tabular-nums" style={{ color: "var(--text-mid)" }}>
-          <span>{fmt(currentTime)}</span>
-          <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--text-soft)]">
-            {isLoading ? "Synthesizing..." : isPlaying ? "Playing" : "Ready"}
-          </span>
-          <span>{fmt(duration)}</span>
+          {/* Language Switcher Pills */}
+          <div
+            className="flex items-center gap-0.5 p-0.5 rounded-lg"
+            style={{
+              background: "var(--bg)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            {TTS_LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => handleLanguageSelect(l.code)}
+                disabled={isLoading}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold transition-all tap"
+                style={{
+                  background: lang === l.code ? "var(--card)" : "transparent",
+                  color: lang === l.code ? "var(--text)" : "var(--text-soft)",
+                  boxShadow: lang === l.code ? "var(--shadow-sm)" : "none",
+                }}
+                title={`Listen in ${l.name}`}
+              >
+                <span className="text-[11px]">{l.flag}</span>
+                <span>{l.code.toUpperCase()}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Waveform Scrubber */}
+        {/* Main Player Row */}
         <div className="flex items-center gap-3">
-          <Waveform progress={progress} playing={isPlaying} onSeek={seek} />
-        </div>
-      </div>
-
-      {/* Control Buttons Bar */}
-      <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3">
-        {/* Left Side: Jump Sentence Controls */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={prevSentence}
-            disabled={isLoading || sentences.length === 0}
-            className="w-8 h-8 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-40 transition-colors"
-            title="Previous sentence"
-            aria-label="Previous sentence"
-          >
-            <i className="ri-skip-back-line text-sm" />
-          </button>
-          <button
-            onClick={rewind10}
-            disabled={isLoading}
-            className="w-8 h-8 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-40 transition-colors"
-            title="Rewind 10 seconds"
-            aria-label="Rewind 10 seconds"
-          >
-            <span className="text-[10px] font-bold">-10s</span>
-          </button>
-        </div>
-
-        {/* Center: Primary Play/Pause & Stop */}
-        <div className="flex items-center gap-2.5">
+          {/* Play / Pause Primary Button */}
           <button
             onClick={togglePlay}
             disabled={isLoading}
-            className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 tap shadow-md transition-transform hover:scale-105 active:scale-95"
-            style={{ background: "var(--card-dark)", color: "var(--card)" }}
-            title={isPlaying ? "Pause" : "Play narration"}
-            aria-label={isPlaying ? "Pause" : "Play narration"}
+            className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 tap transition-transform"
+            style={{
+              background: "var(--text)",
+              color: "var(--card)",
+            }}
+            title={isPlaying ? "Pause" : "Play story narration"}
+            aria-label={isPlaying ? "Pause" : "Play story narration"}
           >
             {isLoading ? (
-              <i className="ri-loader-4-line text-xl animate-spin" />
+              <i className="ri-loader-4-line text-lg animate-spin" />
             ) : (
               <i
-                className={`${isPlaying ? "ri-pause-fill" : "ri-play-fill"} text-xl`}
-                style={isPlaying ? {} : { marginLeft: 2 }}
+                className={`${isPlaying ? "ri-pause-fill" : "ri-play-fill"
+                  } text-lg`}
+                style={isPlaying ? undefined : { marginLeft: 2 }}
               />
             )}
           </button>
 
-          {isPlaying && (
-            <button
-              onClick={stopPlayback}
-              className="w-9 h-9 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-              title="Stop playback"
-              aria-label="Stop playback"
+          {/* Waveform + Timestamps */}
+          <div className="flex-1 min-w-0">
+            <Waveform progress={progress} playing={isPlaying} onSeek={seek} />
+            <div
+              className="flex items-center justify-between text-[11px] font-medium tabular-nums mt-0.5"
+              style={{ color: "var(--text-soft)" }}
             >
-              <i className="ri-stop-fill text-sm" />
+              <span>{fmt(currentTime)}</span>
+              <span>
+                {isLoading
+                  ? "Generating audio…"
+                  : duration > 0
+                    ? fmt(duration)
+                    : "Tap play to listen"}
+              </span>
+            </div>
+          </div>
+
+          {/* Transport Controls (Desktop & Mobile) */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            <button
+              onClick={prevSentence}
+              disabled={isLoading || sentences.length === 0}
+              className="w-8 h-8 rounded-lg hidden sm:flex items-center justify-center tap disabled:opacity-35"
+              style={{ color: "var(--text-mid)" }}
+              title="Previous sentence"
+            >
+              <i className="ri-skip-back-line text-sm" />
             </button>
-          )}
-        </div>
-
-        {/* Right Side: Forward Controls & Settings Toggle */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={forward10}
-            disabled={isLoading}
-            className="w-8 h-8 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-40 transition-colors"
-            title="Forward 10 seconds"
-            aria-label="Forward 10 seconds"
-          >
-            <span className="text-[10px] font-bold">+10s</span>
-          </button>
-          <button
-            onClick={nextSentence}
-            disabled={isLoading || sentences.length === 0}
-            className="w-8 h-8 rounded-full flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)] hover:bg-[var(--bg)] disabled:opacity-40 transition-colors"
-            title="Next sentence"
-            aria-label="Next sentence"
-          >
-            <i className="ri-skip-forward-line text-sm" />
-          </button>
-
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="w-8 h-8 rounded-full flex items-center justify-center tap ml-1 transition-colors"
-            style={{
-              background: showSettings ? "var(--card-dark)" : "var(--bg)",
-              color: showSettings ? "var(--card)" : "var(--text-mid)",
-            }}
-            title="Audio settings (Speed & Volume)"
-            aria-label="Audio settings"
-          >
-            <i className="ri-equalizer-3-line text-xs" />
-          </button>
+            <button
+              onClick={rewind10}
+              disabled={isLoading || !audioUrl}
+              className="w-8 h-8 rounded-lg flex items-center justify-center tap disabled:opacity-35"
+              style={{ color: "var(--text-mid)" }}
+              title="Rewind 10 seconds"
+            >
+              <i className="ri-replay-10-line text-base" />
+            </button>
+            <button
+              onClick={forward10}
+              disabled={isLoading || !audioUrl}
+              className="w-8 h-8 rounded-lg flex items-center justify-center tap disabled:opacity-35"
+              style={{ color: "var(--text-mid)" }}
+              title="Forward 10 seconds"
+            >
+              <i className="ri-forward-10-line text-base" />
+            </button>
+            <button
+              onClick={nextSentence}
+              disabled={isLoading || sentences.length === 0}
+              className="w-8 h-8 rounded-lg hidden sm:flex items-center justify-center tap disabled:opacity-35"
+              style={{ color: "var(--text-mid)" }}
+              title="Next sentence"
+            >
+              <i className="ri-skip-forward-line text-sm" />
+            </button>
+            {isPlaying && (
+              <button
+                onClick={stopPlayback}
+                className="w-8 h-8 rounded-lg flex items-center justify-center tap"
+                style={{ color: "var(--accent-red)" }}
+                title="Stop"
+              >
+                <i className="ri-stop-fill text-sm" />
+              </button>
+            )}
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="w-8 h-8 rounded-lg flex items-center justify-center tap ml-0.5"
+              style={{
+                background: showSettings ? "var(--text)" : "var(--bg)",
+                color: showSettings ? "var(--card)" : "var(--text-mid)",
+                border: "1px solid var(--border)",
+              }}
+              title="Speed & Volume"
+            >
+              <i className="ri-equalizer-line text-sm" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Synchronized Sentence Highlighting Banner */}
+      {/* Active Sentence Live Caption */}
       {currentSentence && (
         <div
-          className="mx-4 sm:mx-5 mb-3 p-3 rounded-xl bg-[var(--bg)] border border-[var(--border)] flex items-start gap-2.5 slide-up"
+          className="px-3.5 sm:px-4 py-2.5 flex items-start gap-2.5 slide-up"
+          style={{
+            background: "var(--bg)",
+            borderTop: "1px solid var(--border)",
+          }}
         >
-          <i
-            className="ri-double-quotes-l text-base flex-shrink-0 mt-0.5"
-            style={{ color: "var(--accent-purple)" }}
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <span
-                className="text-[10px] font-bold uppercase tracking-wider"
-                style={{ color: "var(--accent-purple)" }}
-              >
-                Now Reading
-              </span>
-              <span className="text-[10px] font-semibold text-[var(--text-soft)]">
-                Sentence {currentSentence.index + 1} of {sentences.length}
-              </span>
-            </div>
-            <p className="text-[12.5px] font-medium leading-relaxed line-clamp-2 text-[var(--text)]">
-              {currentSentence.text}
-            </p>
-          </div>
+          <span
+            className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5"
+            style={{
+              background: "var(--card)",
+              color: "var(--text-mid)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            {currentSentence.index + 1}/{sentences.length}
+          </span>
+          <p
+            className="text-[12.5px] leading-relaxed line-clamp-2 flex-1"
+            style={{ color: "var(--text-mid)" }}
+          >
+            {currentSentence.text}
+          </p>
         </div>
       )}
 
-      {/* Settings Tray: Speed & Volume */}
+      {/* Expandable Speed & Volume Drawer */}
       {showSettings && (
         <div
-          className="px-4 sm:px-5 py-3.5 space-y-3.5 bg-[var(--bg)]/60 border-t border-[var(--border)] slide-up"
+          className="px-3.5 sm:px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 slide-up"
+          style={{
+            background: "var(--bg)",
+            borderTop: "1px solid var(--border)",
+          }}
         >
-          {/* Speed Selection */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
+          {/* Speed */}
+          <div className="flex items-center justify-between sm:justify-start gap-2">
             <span
-              className="text-[11px] font-bold uppercase tracking-widest"
+              className="text-[11px] font-semibold"
               style={{ color: "var(--text-soft)" }}
             >
               Speed
             </span>
-            <div className="flex gap-1">
+            <div className="flex items-center gap-1">
               {[0.75, 1, 1.25, 1.5, 2].map((r) => (
                 <button
                   key={r}
                   onClick={() => changeSpeed(r)}
-                  className="px-2.5 py-1 rounded-lg text-[11px] font-bold tap transition-all"
+                  className="px-2 py-1 rounded-md text-[11px] font-semibold tap"
                   style={{
                     background: rate === r ? "var(--text)" : "var(--card)",
                     color: rate === r ? "var(--card)" : "var(--text-mid)",
@@ -898,43 +941,39 @@ const StoryAudioPlayer: React.FC<StoryAudioPlayerProps> = ({
             </div>
           </div>
 
-          {/* Volume Control */}
-          <div className="flex items-center justify-between gap-3">
+          {/* Volume */}
+          <div className="flex items-center justify-between sm:justify-end gap-2.5">
+            <button
+              onClick={toggleMute}
+              className="w-7 h-7 rounded-md flex items-center justify-center tap"
+              style={{ color: "var(--text-mid)" }}
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              <i
+                className={
+                  isMuted || volume === 0
+                    ? "ri-volume-mute-line text-sm text-red-500"
+                    : volume < 0.5
+                      ? "ri-volume-down-line text-sm"
+                      : "ri-volume-up-line text-sm"
+                }
+              />
+            </button>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={isMuted ? 0 : volume}
+              onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+              className="w-28 sm:w-32 accent-[var(--text)] h-1.5 rounded-lg cursor-pointer"
+            />
             <span
-              className="text-[11px] font-bold uppercase tracking-widest flex items-center gap-1.5"
+              className="text-[11px] font-semibold tabular-nums w-8 text-right"
               style={{ color: "var(--text-soft)" }}
             >
-              Volume
+              {Math.round((isMuted ? 0 : volume) * 100)}%
             </span>
-            <div className="flex items-center gap-2 flex-1 max-w-[200px]">
-              <button
-                onClick={toggleMute}
-                className="w-7 h-7 rounded-lg flex items-center justify-center tap text-[var(--text-mid)] hover:text-[var(--text)]"
-                title={isMuted ? "Unmute" : "Mute"}
-              >
-                <i
-                  className={
-                    isMuted || volume === 0
-                      ? "ri-volume-mute-line text-sm text-red-500"
-                      : volume < 0.5
-                        ? "ri-volume-down-line text-sm"
-                        : "ri-volume-up-line text-sm"
-                  }
-                />
-              </button>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                value={isMuted ? 0 : volume}
-                onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-                className="w-full accent-[var(--accent-purple)] h-1.5 bg-[var(--border-hover)] rounded-lg cursor-pointer"
-              />
-              <span className="text-[10px] font-bold tabular-nums w-7 text-right text-[var(--text-mid)]">
-                {Math.round((isMuted ? 0 : volume) * 100)}%
-              </span>
-            </div>
           </div>
         </div>
       )}
@@ -958,7 +997,9 @@ async function translateText(text: string, target: string): Promise<string> {
     chunks.map(async (c) => {
       try {
         const r = await fetch(
-          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(c)}&langpair=en|${target}`,
+          `https://api.mymemory.translated.net/get?q=${encodeURIComponent(
+            c,
+          )}&langpair=en|${target}`,
         );
         const d = await r.json();
         return d.responseStatus === 200
@@ -972,7 +1013,7 @@ async function translateText(text: string, target: string): Promise<string> {
   return results.join(" ");
 }
 
-// ─── Bottom Sheet ────────────────────────────────────────────────────────────
+// ─── Modal / Bottom Sheet ────────────────────────────────────────────────────
 const Sheet: React.FC<{
   open: boolean;
   onClose: () => void;
@@ -982,32 +1023,36 @@ const Sheet: React.FC<{
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-[95] flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-[95] flex items-end sm:items-center justify-center p-0 sm:p-4"
       onClick={onClose}
     >
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+      <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
       <div
-        className="relative w-full sm:max-w-md rounded-t-[28px] sm:rounded-[24px] p-6 slide-up max-h-[85vh] overflow-y-auto no-scrollbar"
-        style={{ background: "var(--card)", boxShadow: "var(--shadow-xl)" }}
+        className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 sm:p-6 slide-up max-h-[85vh] overflow-y-auto no-scrollbar"
+        style={{
+          background: "var(--card)",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-xl)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div
-          className="w-10 h-1 rounded-full mx-auto mb-5 sm:hidden"
+          className="w-10 h-1 rounded-full mx-auto mb-4 sm:hidden"
           style={{ background: "var(--border-hover)" }}
         />
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <h3
-            className="text-xl font-extrabold"
+            className="text-base font-bold tracking-tight"
             style={{ color: "var(--text)" }}
           >
             {title}
           </h3>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full flex items-center justify-center tap"
+            className="w-8 h-8 rounded-full flex items-center justify-center tap"
             style={{ background: "var(--bg)", color: "var(--text-mid)" }}
           >
-            <i className="ri-close-line text-lg" />
+            <i className="ri-close-line text-base" />
           </button>
         </div>
         {children}
@@ -1023,28 +1068,32 @@ const TranslateSheet: React.FC<{
   onSelect: (c: string) => void;
   current: string;
 }> = ({ open, onClose, onSelect, current }) => (
-  <Sheet open={open} onClose={onClose} title="Translate">
+  <Sheet open={open} onClose={onClose} title="Translate story">
     <div className="grid grid-cols-2 gap-2">
-      {LANGUAGES.map((l) => (
-        <button
-          key={l.code}
-          onClick={() => {
-            onSelect(l.code);
-            onClose();
-          }}
-          className="flex items-center gap-2.5 p-3 rounded-2xl text-left tap"
-          style={{
-            background: current === l.code ? "var(--text)" : "var(--bg)",
-            color: current === l.code ? "var(--card)" : "var(--text)",
-          }}
-        >
-          <span className="text-xl">{l.flag}</span>
-          <span className="text-sm font-semibold truncate flex-1">
-            {l.name}
-          </span>
-          {current === l.code && <i className="ri-check-line flex-shrink-0" />}
-        </button>
-      ))}
+      {LANGUAGES.map((l) => {
+        const active = current === l.code;
+        return (
+          <button
+            key={l.code}
+            onClick={() => {
+              onSelect(l.code);
+              onClose();
+            }}
+            className="flex items-center gap-2.5 p-2.5 rounded-xl text-left tap transition-colors"
+            style={{
+              background: active ? "var(--text)" : "var(--bg)",
+              color: active ? "var(--card)" : "var(--text)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <span className="text-lg leading-none">{l.flag}</span>
+            <span className="text-[13px] font-semibold truncate flex-1">
+              {l.name}
+            </span>
+            {active && <i className="ri-check-line text-sm flex-shrink-0" />}
+          </button>
+        );
+      })}
     </div>
   </Sheet>
 );
@@ -1056,33 +1105,44 @@ const FontSheet: React.FC<{
   size: FontSize;
   onChange: (s: FontSize) => void;
 }> = ({ open, onClose, size, onChange }) => (
-  <Sheet open={open} onClose={onClose} title="Reading Size">
+  <Sheet open={open} onClose={onClose} title="Reading typography">
     <div className="space-y-2">
-      {FONT_OPTIONS.map((o) => (
-        <button
-          key={o.key}
-          onClick={() => {
-            onChange(o.key);
-            onClose();
-          }}
-          className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-left tap"
-          style={{
-            background: size === o.key ? "var(--text)" : "var(--bg)",
-            color: size === o.key ? "var(--card)" : "var(--text)",
-          }}
-        >
-          <span
-            className="w-10 text-center flex-shrink-0 font-bold"
-            style={{ fontSize: o.preview }}
+      {FONT_OPTIONS.map((o) => {
+        const active = size === o.key;
+        return (
+          <button
+            key={o.key}
+            onClick={() => {
+              onChange(o.key);
+              onClose();
+            }}
+            className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-xl text-left tap"
+            style={{
+              background: active ? "var(--text)" : "var(--bg)",
+              color: active ? "var(--card)" : "var(--text)",
+              border: "1px solid var(--border)",
+            }}
           >
-            Ag
-          </span>
-          <span className="text-sm font-semibold">{o.label}</span>
-          {size === o.key && (
-            <i className="ri-check-line ml-auto flex-shrink-0" />
-          )}
-        </button>
-      ))}
+            <span
+              className="w-9 text-center flex-shrink-0 font-bold"
+              style={{ fontSize: o.preview }}
+            >
+              Aa
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13.5px] font-semibold leading-tight">
+                {o.label}
+              </p>
+              <p
+                className="text-[11.5px] opacity-75 truncate mt-0.5"
+              >
+                {o.desc}
+              </p>
+            </div>
+            {active && <i className="ri-check-line text-base flex-shrink-0" />}
+          </button>
+        );
+      })}
     </div>
   </Sheet>
 );
@@ -1103,7 +1163,7 @@ const GifPicker: React.FC<{
       const r = await api.get("/stories/search-gif", { params: { q } });
       setGifs(r.data.gifs || []);
     } catch {
-      toast.error("Failed");
+      toast.error("Failed to load GIFs");
     } finally {
       setLoading(false);
     }
@@ -1111,62 +1171,79 @@ const GifPicker: React.FC<{
 
   return (
     <div className="card p-3 slide-up">
-      <div className="flex gap-2 mb-3">
+      <div className="flex gap-1.5 mb-2.5">
         <div className="relative flex-1 min-w-0">
           <i
-            className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-sm"
+            className="ri-search-line absolute left-3 top-1/2 -translate-y-1/2 text-xs"
             style={{ color: "var(--text-soft)" }}
           />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && search()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                search();
+              }
+            }}
             placeholder="Search GIFs…"
             autoFocus
-            className="w-full rounded-xl pl-9 pr-3 py-2.5 text-sm outline-none"
-            style={{ background: "var(--bg)", color: "var(--text)" }}
+            className="w-full rounded-lg pl-8 pr-3 py-2 text-[13px] outline-none"
+            style={{
+              background: "var(--bg)",
+              color: "var(--text)",
+              border: "1px solid var(--border)",
+            }}
           />
         </div>
         <button
+          type="button"
           onClick={search}
-          className="w-10 h-10 rounded-xl flex items-center justify-center tap flex-shrink-0"
-          style={{ background: "var(--card-dark)", color: "var(--card)" }}
+          className="px-3 h-9 rounded-lg flex items-center justify-center tap flex-shrink-0 text-xs font-semibold"
+          style={{ background: "var(--text)", color: "var(--card)" }}
         >
           {loading ? (
             <i className="ri-loader-4-line animate-spin" />
           ) : (
-            <i className="ri-search-line" />
+            "Search"
           )}
         </button>
         <button
+          type="button"
           onClick={onClose}
-          className="w-10 h-10 rounded-xl flex items-center justify-center tap flex-shrink-0"
-          style={{ background: "var(--bg)", color: "var(--text-mid)" }}
+          className="w-9 h-9 rounded-lg flex items-center justify-center tap flex-shrink-0"
+          style={{
+            background: "var(--bg)",
+            color: "var(--text-mid)",
+            border: "1px solid var(--border)",
+          }}
         >
           <i className="ri-close-line" />
         </button>
       </div>
-      {gifs.length > 0 && (
-        <div className="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto no-scrollbar rounded-xl">
+
+      {gifs.length > 0 ? (
+        <div className="grid grid-cols-3 gap-1.5 max-h-48 overflow-y-auto no-scrollbar rounded-lg">
           {gifs.map((g) => (
             <img
               key={g.id}
               src={g.images.fixed_height.url}
               onClick={() => onSelect(g.images.fixed_height.url)}
-              className="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+              className="w-full h-20 object-cover rounded-md cursor-pointer hover:opacity-80 transition-opacity"
               loading="lazy"
-              alt=""
+              alt="GIF"
             />
           ))}
         </div>
-      )}
-      {!loading && !gifs.length && (
-        <p
-          className="text-center text-xs py-6"
-          style={{ color: "var(--text-soft)" }}
-        >
-          {q ? `Nothing found` : "Search for GIFs"}
-        </p>
+      ) : (
+        !loading && (
+          <p
+            className="text-center text-xs py-5"
+            style={{ color: "var(--text-soft)" }}
+          >
+            {q ? "No GIFs found" : "Type a keyword and press Enter"}
+          </p>
+        )
       )}
     </div>
   );
@@ -1182,21 +1259,55 @@ const CommentBox: React.FC<{
 }> = ({
   onSubmit,
   placeholder = "Add a comment…",
-  autoFocus,
+  autoFocus = false,
   onCancel,
-  compact,
+  compact = false,
 }) => {
     const [text, setText] = useState("");
     const [gif, setGif] = useState<string | null>(null);
     const [posting, setPosting] = useState(false);
     const [gifOpen, setGifOpen] = useState(false);
-    const [focused, setFocused] = useState(false);
+    const [focused, setFocused] = useState(Boolean(autoFocus));
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const { user } = useAuth();
-    const has = text.trim() || gif;
-    const expanded = focused || has || autoFocus;
+
+    const hasContent = Boolean(text.trim() || gif);
+    const isExpanded = focused || hasContent || gifOpen || Boolean(autoFocus);
+
+    const syncHeight = () => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, compact ? 140 : 180)}px`;
+    };
+
+    useEffect(() => {
+      if (autoFocus && textareaRef.current) {
+        textareaRef.current.focus();
+      }
+    }, [autoFocus]);
+
+    useEffect(() => {
+      const handleOutsideClick = (e: MouseEvent) => {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(e.target as Node)
+        ) {
+          if (!text.trim() && !gif && !gifOpen) {
+            setFocused(false);
+          }
+        }
+      };
+      if (focused || gifOpen) {
+        document.addEventListener("mousedown", handleOutsideClick);
+      }
+      return () => document.removeEventListener("mousedown", handleOutsideClick);
+    }, [focused, text, gif, gifOpen]);
 
     const submit = async () => {
-      if (!has || posting) return;
+      if (!hasContent || posting) return;
       setPosting(true);
       try {
         await onSubmit(text.trim(), gif || undefined);
@@ -1204,124 +1315,195 @@ const CommentBox: React.FC<{
         setGif(null);
         setGifOpen(false);
         setFocused(false);
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto";
+        }
       } finally {
         setPosting(false);
       }
     };
 
     return (
-      <div className="flex gap-3 items-start">
-        {!compact && (
-          <Avatar src={user?.image?.url} name={user?.username || "U"} size={36} />
-        )}
-        <div className="flex-1 min-w-0">
-          <div
-            className="card overflow-hidden transition-all"
-            style={{
-              boxShadow: expanded ? "var(--shadow-md)" : "var(--shadow-sm)",
-            }}
-          >
-            {gif && (
-              <div className="p-3 pb-0">
-                <div className="relative inline-block">
-                  <img
-                    src={gif}
-                    className="rounded-xl max-w-[160px] max-h-[100px] object-cover"
-                    alt=""
-                  />
-                  <button
-                    onClick={() => setGif(null)}
-                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[10px]"
-                    style={{
-                      background: "var(--card-dark)",
-                      color: "var(--card)",
-                    }}
-                  >
-                    <i className="ri-close-line" />
-                  </button>
-                </div>
-              </div>
-            )}
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onFocus={() => setFocused(true)}
-              placeholder={placeholder}
-              rows={1}
-              autoFocus={autoFocus}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit();
-                if (e.key === "Escape" && onCancel) onCancel();
-              }}
-              className={`w-full bg-transparent outline-none text-sm leading-relaxed ${compact
-                ? "px-4 py-2.5 min-h-[42px] max-h-[120px]"
-                : "px-4 pt-3.5 pb-2 min-h-[52px] max-h-[160px]"
-                }`}
-              style={{ color: "var(--text)", fontFamily: "var(--font)" }}
-            />
-            {expanded && (
-              <div className="flex items-center justify-between px-3 pb-3 pt-1 gap-2">
-                <button
-                  onClick={() => setGifOpen(!gifOpen)}
-                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold tap flex items-center gap-1"
-                  style={{
-                    background: gifOpen ? "var(--text)" : "transparent",
-                    color: gifOpen ? "var(--card)" : "var(--text-soft)",
-                  }}
-                >
-                  <i className="ri-file-gif-line text-sm" /> GIF
-                </button>
-                <div className="flex gap-2">
-                  {onCancel && (
-                    <button
-                      onClick={onCancel}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold tap"
-                      style={{ color: "var(--text-mid)" }}
-                    >
-                      Cancel
-                    </button>
-                  )}
-                  <button
-                    onClick={submit}
-                    disabled={!has || posting}
-                    className="pill-btn pill-btn-dark"
-                    style={{
-                      height: 34,
-                      padding: "0 14px",
-                      fontSize: 12,
-                      opacity: has ? 1 : 0.4,
-                    }}
-                  >
-                    {posting ? (
-                      <i className="ri-loader-4-line animate-spin" />
-                    ) : (
-                      <>
-                        <span>{compact ? "Reply" : "Post"}</span>
-                        <i className="ri-arrow-right-up-line text-sm" />
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-          {gifOpen && (
-            <div className="mt-2">
-              <GifPicker
-                onSelect={(u) => {
-                  setGif(u);
-                  setGifOpen(false);
-                }}
-                onClose={() => setGifOpen(false)}
+      <div ref={containerRef} className="w-full">
+        <div className="flex gap-2.5 sm:gap-3 items-start">
+          {!compact && (
+            <div className="flex-shrink-0 pt-0.5">
+              <Avatar
+                src={user?.image?.url}
+                name={user?.username || "U"}
+                size={36}
               />
             </div>
           )}
+
+          <div className="flex-1 min-w-0">
+            <div
+              onClick={() => textareaRef.current?.focus()}
+              className="rounded-2xl transition-colors cursor-text"
+              style={{
+                background: compact ? "var(--bg)" : "var(--card)",
+                border: `1px solid ${focused ? "var(--text-soft)" : "var(--border)"
+                  }`,
+              }}
+            >
+              {gif && (
+                <div
+                  className="px-3.5 pt-3 pb-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="relative inline-block rounded-xl overflow-hidden"
+                    style={{ border: "1px solid var(--border)" }}
+                  >
+                    <img
+                      src={gif}
+                      className="max-w-[180px] sm:max-w-[220px] max-h-[140px] object-cover block"
+                      alt="Selected GIF"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setGif(null)}
+                      aria-label="Remove GIF"
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-xs transition-transform active:scale-90"
+                      style={{
+                        background: "rgba(0, 0, 0, 0.75)",
+                        color: "#fff",
+                        backdropFilter: "blur(4px)",
+                      }}
+                    >
+                      <i className="ri-close-line text-sm" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <textarea
+                ref={textareaRef}
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  syncHeight();
+                }}
+                onFocus={() => setFocused(true)}
+                placeholder={placeholder}
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    submit();
+                  }
+                  if (e.key === "Escape") {
+                    if (gifOpen) {
+                      setGifOpen(false);
+                    } else if (onCancel) {
+                      onCancel();
+                    } else if (!hasContent) {
+                      setFocused(false);
+                      textareaRef.current?.blur();
+                    }
+                  }
+                }}
+                className={`w-full bg-transparent outline-none resize-none text-[14px] leading-[1.5] block ${compact
+                  ? "px-3.5 py-2.5 min-h-[40px]"
+                  : "px-3.5 py-2.5 sm:px-4 sm:py-3 min-h-[44px]"
+                  }`}
+                style={{
+                  color: "var(--text)",
+                  fontFamily: "var(--font)",
+                }}
+              />
+
+              {isExpanded && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center justify-between gap-2 px-2.5 sm:px-3 pb-2.5 pt-1"
+                >
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setGifOpen(!gifOpen)}
+                      className="h-8 px-2.5 rounded-lg text-[11.5px] font-semibold inline-flex items-center gap-1.5 transition-colors tap"
+                      style={{
+                        background: gifOpen ? "var(--text)" : "var(--bg)",
+                        color: gifOpen ? "var(--card)" : "var(--text-mid)",
+                        border: "1px solid var(--border)",
+                      }}
+                    >
+                      <i className="ri-file-gif-line text-[14px]" />
+                      <span>GIF</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    {(onCancel || (!compact && hasContent)) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onCancel) {
+                            onCancel();
+                          } else {
+                            setText("");
+                            setGif(null);
+                            setGifOpen(false);
+                            setFocused(false);
+                            if (textareaRef.current) {
+                              textareaRef.current.style.height = "auto";
+                            }
+                          }
+                        }}
+                        disabled={posting}
+                        className="h-8 px-3 rounded-lg text-[12px] font-medium transition-opacity hover:opacity-80 tap"
+                        style={{ color: "var(--text-soft)" }}
+                      >
+                        Cancel
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={submit}
+                      disabled={!hasContent || posting}
+                      className="pill-btn pill-btn-dark inline-flex items-center justify-center gap-1.5 transition-opacity"
+                      style={{
+                        height: 32,
+                        padding: "0 14px",
+                        fontSize: 12.5,
+                        opacity: hasContent && !posting ? 1 : 0.4,
+                      }}
+                    >
+                      {posting ? (
+                        <>
+                          <i className="ri-loader-4-line animate-spin text-sm" />
+                          <span>Posting</span>
+                        </>
+                      ) : (
+                        <span>{compact ? "Reply" : "Post"}</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {gifOpen && (
+              <div className="mt-2 slide-up">
+                <GifPicker
+                  onSelect={(u) => {
+                    setGif(u);
+                    setGifOpen(false);
+                    textareaRef.current?.focus();
+                  }}
+                  onClose={() => setGifOpen(false)}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   };
 
-// ─── Single Comment ──────────────────────────────────────────────────────────
+// ─── Single Comment (Social Thread Layout) ───────────────────────────────────
 const Comment: React.FC<{
   c: Comment;
   replies: Comment[];
@@ -1351,261 +1533,383 @@ const Comment: React.FC<{
 }) => {
     const [editing, setEditing] = useState(false);
     const [editText, setEditText] = useState(c.comment);
+    const [isSaving, setIsSaving] = useState(false);
     const [showReplies, setShowReplies] = useState(true);
     const [menuOpen, setMenuOpen] = useState(false);
     const [delConfirm, setDelConfirm] = useState(false);
     const [likeAnim, setLikeAnim] = useState(false);
+
     const menuRef = useRef<HTMLDivElement>(null);
+    const editInputRef = useRef<HTMLTextAreaElement>(null);
 
     const authorId = typeof c.author === "string" ? c.author : c.author?._id;
-    const isMine = authorId === currentUserId;
+    const isMine = Boolean(currentUserId && authorId === currentUserId);
     const canDelete = isMine || isStoryOwner;
     const isStoryAuthor = authorId === storyOwnerId;
+    const isReply = depth > 0;
+    const hasReplies = replies.length > 0;
+
     const hasLiked =
       c.likes?.some(
         (id) =>
           (typeof id === "string" ? id : (id as any)?._id) === currentUserId,
       ) || false;
-    const isReply = depth > 0;
 
     useEffect(() => {
-      const fn = (e: MouseEvent) => {
+      const handleClickOutside = (e: MouseEvent) => {
         if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
           setMenuOpen(false);
           setDelConfirm(false);
         }
       };
-      if (menuOpen) document.addEventListener("mousedown", fn);
-      return () => document.removeEventListener("mousedown", fn);
+      if (menuOpen) document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [menuOpen]);
 
-    return (
-      <div>
-        <div className="flex gap-2.5 group">
-          <Link to={`/profile/${c.author.username}`} className="flex-shrink-0">
-            <Avatar
-              src={c.author.image?.url}
-              name={c.author.username}
-              size={isReply ? 30 : 36}
-            />
-          </Link>
+    useEffect(() => {
+      if (editing && editInputRef.current) {
+        const el = editInputRef.current;
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+        el.style.height = "auto";
+        el.style.height = `${el.scrollHeight}px`;
+      }
+    }, [editing]);
 
-          <div className="flex-1 min-w-0">
-            <div
-              className={`rounded-2xl px-4 py-3 ${isReply ? "" : "card"}`}
-              style={isReply ? { background: "var(--bg)" } : {}}
+    const handleSaveEdit = async () => {
+      const trimmed = editText.trim();
+      if (!trimmed || trimmed === c.comment || isSaving) {
+        if (trimmed === c.comment) setEditing(false);
+        return;
+      }
+      try {
+        setIsSaving(true);
+        await onEdit(c._id, trimmed);
+        setEditing(false);
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    return (
+      <div
+        className={`group relative ${!isReply ? "py-4" : "pt-3 pb-1"}`}
+        style={
+          !isReply ? { borderBottom: "1px solid var(--border)" } : undefined
+        }
+      >
+        <div className="flex gap-3">
+          {/* Left Column: Avatar + Vertical Thread Spine */}
+          <div className="flex flex-col items-center flex-shrink-0">
+            <Link
+              to={`/profile/${c.author.username}`}
+              className="rounded-full transition-opacity hover:opacity-85"
             >
-              {/* Header */}
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <Avatar
+                src={c.author.image?.url}
+                name={c.author.username}
+                size={isReply ? 28 : 36}
+              />
+            </Link>
+
+            {(hasReplies || replyTo === c._id) && !isReply && (
+              <div
+                className="w-[1.5px] flex-1 mt-2 rounded-full"
+                style={{ background: "var(--border)" }}
+              />
+            )}
+          </div>
+
+          {/* Right Column: Content */}
+          <div className="flex-1 min-w-0">
+            {/* Header Row */}
+            <div className="flex items-center justify-between gap-2 leading-none">
+              <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                 <Link
                   to={`/profile/${c.author.username}`}
-                  className="text-[13px] font-bold hover:underline truncate"
+                  className="text-[13.5px] font-semibold hover:underline truncate"
                   style={{ color: "var(--text)" }}
                 >
                   {c.author.name || c.author.username}
                 </Link>
 
+                {c.author.name && c.author.username && (
+                  <Link
+                    to={`/profile/${c.author.username}`}
+                    className="text-[12px] truncate hidden sm:inline"
+                    style={{ color: "var(--text-soft)" }}
+                  >
+                    @{c.author.username}
+                  </Link>
+                )}
+
                 {isStoryAuthor && (
                   <span
-                    className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider flex-shrink-0"
-                    style={{ background: "var(--text)", color: "var(--card)" }}
+                    className="px-1.5 py-[2px] rounded text-[10px] font-semibold tracking-tight flex-shrink-0"
+                    style={{
+                      background: "var(--bg)",
+                      color: "var(--text)",
+                      border: "1px solid var(--border)",
+                    }}
                   >
                     Author
                   </span>
                 )}
 
                 <span
-                  className="text-[11px] flex-shrink-0"
+                  className="text-[11px] select-none"
                   style={{ color: "var(--text-soft)" }}
                 >
-                  {moment(c.timeStamp).fromNow()}
-                  {c.editedAt && <span className="italic ml-1">· edited</span>}
+                  ·
                 </span>
 
-                {canDelete && !editing && (
-                  <div className="relative ml-auto flex-shrink-0" ref={menuRef}>
-                    <button
-                      onClick={() => setMenuOpen(!menuOpen)}
-                      className="w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 tap"
-                      style={{ color: "var(--text-soft)" }}
-                    >
-                      <i className="ri-more-2-fill text-sm" />
-                    </button>
-                    {menuOpen && (
-                      <div
-                        className="absolute right-0 top-full mt-1 w-36 rounded-xl py-1 z-50 scale-in overflow-hidden"
-                        style={{
-                          background: "var(--card)",
-                          boxShadow: "var(--shadow-lg)",
-                        }}
-                      >
-                        {isMine && (
-                          <button
-                            onClick={() => {
-                              setEditing(true);
-                              setMenuOpen(false);
-                            }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-semibold tap"
-                            style={{ color: "var(--text-mid)" }}
-                          >
-                            <i className="ri-edit-line text-sm" /> Edit
-                          </button>
-                        )}
-                        {canDelete && !delConfirm && (
-                          <button
-                            onClick={() => setDelConfirm(true)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-[13px] font-semibold tap"
-                            style={{ color: "var(--accent-red)" }}
-                          >
-                            <i className="ri-delete-bin-6-line text-sm" /> Delete
-                          </button>
-                        )}
-                        {delConfirm && (
-                          <div className="px-3 py-2 space-y-1.5">
-                            <p
-                              className="text-[11px] font-semibold"
-                              style={{ color: "var(--accent-red)" }}
-                            >
-                              Confirm?
-                            </p>
-                            <div className="flex gap-1.5">
-                              <button
-                                onClick={() => {
-                                  onDelete(c._id);
-                                  setMenuOpen(false);
-                                  setDelConfirm(false);
-                                }}
-                                className="flex-1 px-2 py-1 rounded-lg text-[11px] font-bold tap"
-                                style={{
-                                  background: "var(--accent-red)",
-                                  color: "#fff",
-                                }}
-                              >
-                                Yes
-                              </button>
-                              <button
-                                onClick={() => setDelConfirm(false)}
-                                className="flex-1 px-2 py-1 rounded-lg text-[11px] font-bold tap"
-                                style={{
-                                  background: "var(--bg)",
-                                  color: "var(--text-mid)",
-                                }}
-                              >
-                                No
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                <time
+                  title={moment(c.timeStamp).format("MMM D, YYYY • h:mm A")}
+                  className="text-[12px] flex-shrink-0"
+                  style={{ color: "var(--text-soft)" }}
+                >
+                  {moment(c.timeStamp).fromNow(true)}
+                </time>
+
+                {c.editedAt && (
+                  <span
+                    className="text-[11px]"
+                    style={{ color: "var(--text-soft)" }}
+                  >
+                    (edited)
+                  </span>
                 )}
               </div>
 
-              {/* Body */}
-              {editing ? (
-                <div className="mt-2 space-y-2">
-                  <textarea
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                        onEdit(c._id, editText.trim());
-                        setEditing(false);
-                      }
-                      if (e.key === "Escape") {
-                        setEditing(false);
-                        setEditText(c.comment);
-                      }
+              {canDelete && !editing && (
+                <div className="relative flex-shrink-0 -mr-1" ref={menuRef}>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(!menuOpen);
+                      setDelConfirm(false);
                     }}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm outline-none min-h-[56px] max-h-[200px]"
-                    style={{
-                      background: "var(--card)",
-                      color: "var(--text)",
-                      border: "1px solid var(--border)",
-                      fontFamily: "var(--font)",
-                    }}
-                  />
-                  <div className="flex justify-end gap-2">
+                    aria-label="Comment options"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center opacity-70 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 transition-opacity tap"
+                    style={{ color: "var(--text-soft)" }}
+                  >
+                    <i className="ri-more-fill text-[16px]" />
+                  </button>
+
+                  {menuOpen && (
+                    <div
+                      className="absolute right-0 top-full mt-1 w-40 rounded-xl p-1 z-50 scale-in"
+                      style={{
+                        background: "var(--card)",
+                        border: "1px solid var(--border)",
+                        boxShadow: "var(--shadow-lg)",
+                      }}
+                    >
+                      {isMine && !delConfirm && (
+                        <button
+                          onClick={() => {
+                            setEditText(c.comment);
+                            setEditing(true);
+                            setMenuOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80 text-left tap"
+                          style={{ color: "var(--text)" }}
+                        >
+                          <i className="ri-pencil-line text-[14px]" />
+                          Edit comment
+                        </button>
+                      )}
+
+                      {canDelete && !delConfirm && (
+                        <button
+                          onClick={() => setDelConfirm(true)}
+                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] font-medium transition-colors hover:opacity-80 text-left tap"
+                          style={{ color: "var(--accent-red)" }}
+                        >
+                          <i className="ri-delete-bin-6-line text-[14px]" />
+                          Delete
+                        </button>
+                      )}
+
+                      {delConfirm && (
+                        <div className="p-2 space-y-2">
+                          <p
+                            className="text-[11.5px] font-medium leading-tight"
+                            style={{ color: "var(--text)" }}
+                          >
+                            Delete this comment permanently?
+                          </p>
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => {
+                                onDelete(c._id);
+                                setMenuOpen(false);
+                                setDelConfirm(false);
+                              }}
+                              className="flex-1 py-1.5 rounded-lg text-[11.5px] font-semibold tap"
+                              style={{
+                                background: "var(--accent-red)",
+                                color: "#fff",
+                              }}
+                            >
+                              Delete
+                            </button>
+                            <button
+                              onClick={() => setDelConfirm(false)}
+                              className="flex-1 py-1.5 rounded-lg text-[11.5px] font-medium tap"
+                              style={{
+                                background: "var(--bg)",
+                                color: "var(--text-mid)",
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Comment Body / Inline Editor */}
+            {editing ? (
+              <div
+                className="mt-2 rounded-xl p-2.5"
+                style={{
+                  background: "var(--bg)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <textarea
+                  ref={editInputRef}
+                  value={editText}
+                  onChange={(e) => {
+                    setEditText(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = `${e.target.scrollHeight}px`;
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                      e.preventDefault();
+                      handleSaveEdit();
+                    }
+                    if (e.key === "Escape") {
+                      setEditing(false);
+                      setEditText(c.comment);
+                    }
+                  }}
+                  rows={1}
+                  className="w-full bg-transparent text-[14px] leading-relaxed outline-none resize-none max-h-[240px]"
+                  style={{
+                    color: "var(--text)",
+                    fontFamily: "var(--font)",
+                  }}
+                />
+                <div
+                  className="flex items-center justify-between pt-2 mt-1.5"
+                  style={{ borderTop: "1px solid var(--border)" }}
+                >
+                  <span
+                    className="text-[11px] hidden sm:inline"
+                    style={{ color: "var(--text-soft)" }}
+                  >
+                    Esc to cancel · ⌘+Enter to save
+                  </span>
+                  <div className="flex items-center gap-2 ml-auto">
                     <button
+                      type="button"
                       onClick={() => {
                         setEditing(false);
                         setEditText(c.comment);
                       }}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold tap"
+                      disabled={isSaving}
+                      className="px-2.5 py-1 rounded-lg text-[12px] font-medium tap"
                       style={{ color: "var(--text-mid)" }}
                     >
                       Cancel
                     </button>
                     <button
-                      onClick={async () => {
-                        if (editText.trim() && editText.trim() !== c.comment)
-                          await onEdit(c._id, editText.trim());
-                        setEditing(false);
-                      }}
-                      disabled={!editText.trim() || editText.trim() === c.comment}
-                      className="pill-btn pill-btn-dark"
-                      style={{ height: 32, padding: "0 12px", fontSize: 11 }}
+                      type="button"
+                      onClick={handleSaveEdit}
+                      disabled={
+                        isSaving ||
+                        !editText.trim() ||
+                        editText.trim() === c.comment
+                      }
+                      className="pill-btn pill-btn-dark disabled:opacity-40"
+                      style={{ height: 28, padding: "0 12px", fontSize: 12 }}
                     >
-                      Save
+                      {isSaving ? "Saving…" : "Save"}
                     </button>
                   </div>
                 </div>
-              ) : (
-                <>
-                  {c.comment && c.comment !== "Attached GIF" && (
-                    <p
-                      className="text-[13.5px] leading-relaxed whitespace-pre-wrap break-words"
-                      style={{ color: "var(--text-mid)" }}
-                    >
-                      {c.comment}
-                    </p>
-                  )}
-                  {c.gif && (
+              </div>
+            ) : (
+              <div className="mt-1">
+                {c.comment && c.comment !== "Attached GIF" && (
+                  <p
+                    className="text-[14px] leading-[1.55] whitespace-pre-wrap break-words"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {c.comment}
+                  </p>
+                )}
+
+                {c.gif && (
+                  <div
+                    className="mt-2 inline-block overflow-hidden rounded-xl"
+                    style={{ border: "1px solid var(--border)" }}
+                  >
                     <img
                       src={c.gif}
-                      alt=""
-                      className="mt-2 rounded-xl max-w-[180px]"
+                      alt="Comment GIF"
+                      className="max-w-[220px] max-h-[200px] object-cover block"
                       loading="lazy"
                     />
-                  )}
-                </>
-              )}
-            </div>
+                  </div>
+                )}
+              </div>
+            )}
 
-            {/* Actions */}
+            {/* Action Bar */}
             {!editing && (
-              <div className="flex items-center gap-4 mt-1.5 ml-1">
+              <div className="flex items-center gap-4 mt-2 -ml-1.5">
                 <button
                   onClick={() => {
                     setLikeAnim(true);
                     setTimeout(() => setLikeAnim(false), 420);
                     onLike(c._id);
                   }}
-                  className="inline-flex items-center gap-1 text-[12px] font-semibold tap"
+                  className="inline-flex items-center gap-1.5 px-1.5 py-1 rounded-md text-[12px] font-medium transition-colors tap"
                   style={{
                     color: hasLiked ? "var(--accent-red)" : "var(--text-soft)",
                   }}
                 >
                   <i
-                    className={`${hasLiked ? "ri-heart-3-fill" : "ri-heart-3-line"} text-[14px] ${likeAnim ? "heart-pop" : ""}`}
+                    className={`${hasLiked ? "ri-heart-3-fill" : "ri-heart-3-line"
+                      } text-[15px] ${likeAnim ? "heart-pop" : ""}`}
                   />
-                  {(c.likesCount || 0) > 0 && <span>{c.likesCount}</span>}
+                  {(c.likesCount || 0) > 0 && (
+                    <span className="tabular-nums">{c.likesCount}</span>
+                  )}
                 </button>
+
                 <button
                   onClick={() => setReplyTo(replyTo === c._id ? null : c._id)}
-                  className="text-[12px] font-semibold tap"
+                  className="inline-flex items-center gap-1 px-1.5 py-1 rounded-md text-[12px] font-medium transition-colors tap"
                   style={{
-                    color: replyTo === c._id ? "var(--text)" : "var(--text-soft)",
+                    color:
+                      replyTo === c._id ? "var(--text)" : "var(--text-soft)",
                   }}
                 >
-                  Reply
+                  <i className="ri-chat-1-line text-[14px]" />
+                  <span>Reply</span>
                 </button>
               </div>
             )}
 
-            {/* Reply box */}
+            {/* Inline Reply Box */}
             {replyTo === c._id && (
               <div className="mt-3 slide-up">
                 <CommentBox
@@ -1622,48 +1926,52 @@ const Comment: React.FC<{
               </div>
             )}
 
-            {/* Nested */}
-            {replies.length > 0 && (
-              <div className="mt-3">
-                <button
-                  onClick={() => setShowReplies(!showReplies)}
-                  className="text-[12px] font-bold mb-2 tap flex items-center gap-1"
-                  style={{ color: "var(--text)" }}
-                >
-                  <i
-                    className={`text-[11px] ${showReplies ? "ri-arrow-up-s-line" : "ri-arrow-down-s-line"}`}
-                  />
-                  {showReplies
-                    ? "Hide"
-                    : `${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}
-                </button>
-                {showReplies && (
-                  <div
-                    className="ml-1 pl-3 space-y-3"
-                    style={{ borderLeft: "2px solid var(--border)" }}
+            {/* Nested Replies */}
+            {hasReplies && (
+              <div className="mt-2">
+                {!showReplies ? (
+                  <button
+                    onClick={() => setShowReplies(true)}
+                    className="inline-flex items-center gap-2 py-1 text-[12px] font-semibold tap"
+                    style={{ color: "var(--text-mid)" }}
                   >
-                    {replies.map((r, i) => (
-                      <div
+                    <span
+                      className="w-4 h-[1.5px] rounded-full"
+                      style={{ background: "var(--border)" }}
+                    />
+                    View {replies.length}{" "}
+                    {replies.length === 1 ? "reply" : "replies"}
+                  </button>
+                ) : (
+                  <div className="space-y-1">
+                    {replies.map((r) => (
+                      <Comment
                         key={r._id}
-                        className="fade-in"
-                        style={{ animationDelay: `${i * 30}ms` }}
-                      >
-                        <Comment
-                          c={r}
-                          replies={[]}
-                          storyOwnerId={storyOwnerId}
-                          currentUserId={currentUserId}
-                          isStoryOwner={isStoryOwner}
-                          onDelete={onDelete}
-                          onLike={onLike}
-                          onEdit={onEdit}
-                          onReply={onReply}
-                          replyTo={replyTo}
-                          setReplyTo={setReplyTo}
-                          depth={depth + 1}
-                        />
-                      </div>
+                        c={r}
+                        replies={[]}
+                        storyOwnerId={storyOwnerId}
+                        currentUserId={currentUserId}
+                        isStoryOwner={isStoryOwner}
+                        onDelete={onDelete}
+                        onLike={onLike}
+                        onEdit={onEdit}
+                        onReply={onReply}
+                        replyTo={replyTo}
+                        setReplyTo={setReplyTo}
+                        depth={depth + 1}
+                      />
                     ))}
+
+                    {replies.length > 2 && (
+                      <button
+                        onClick={() => setShowReplies(false)}
+                        className="inline-flex items-center gap-1.5 pt-1 text-[11.5px] font-medium tap"
+                        style={{ color: "var(--text-soft)" }}
+                      >
+                        <i className="ri-subtract-line text-[13px]" />
+                        Hide replies
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1681,22 +1989,26 @@ const LikedByPopover: React.FC<{
   onClose: () => void;
 }> = ({ users, loading, onClose }) => (
   <div
-    className="absolute left-0 top-full mt-2 w-64 rounded-2xl z-50 scale-in overflow-hidden"
-    style={{ background: "var(--card)", boxShadow: "var(--shadow-lg)" }}
+    className="absolute left-0 bottom-full mb-2 w-64 rounded-2xl z-50 scale-in overflow-hidden"
+    style={{
+      background: "var(--card)",
+      border: "1px solid var(--border)",
+      boxShadow: "var(--shadow-lg)",
+    }}
   >
     <div
-      className="flex items-center justify-between px-4 py-3"
+      className="flex items-center justify-between px-3.5 py-2.5"
       style={{ borderBottom: "1px solid var(--border)" }}
     >
       <span
-        className="text-[11px] font-bold uppercase tracking-widest"
+        className="text-[11px] font-bold uppercase tracking-wider"
         style={{ color: "var(--text-soft)" }}
       >
         Liked by
       </span>
       <button
         onClick={onClose}
-        className="tap"
+        className="w-6 h-6 rounded-md flex items-center justify-center tap"
         style={{ color: "var(--text-soft)" }}
       >
         <i className="ri-close-line text-sm" />
@@ -1704,15 +2016,15 @@ const LikedByPopover: React.FC<{
     </div>
     <div className="max-h-56 overflow-y-auto no-scrollbar p-1.5">
       {loading ? (
-        <div className="py-8 flex justify-center">
+        <div className="py-7 flex justify-center">
           <i
-            className="ri-loader-4-line animate-spin text-xl"
-            style={{ color: "var(--border-hover)" }}
+            className="ri-loader-4-line animate-spin text-lg"
+            style={{ color: "var(--text-soft)" }}
           />
         </div>
       ) : users.length === 0 ? (
         <p
-          className="py-8 text-center text-xs"
+          className="py-7 text-center text-xs"
           style={{ color: "var(--text-soft)" }}
         >
           No likes yet
@@ -1723,12 +2035,12 @@ const LikedByPopover: React.FC<{
             key={u._id}
             to={`/profile/${u.username}`}
             onClick={onClose}
-            className="flex items-center gap-2.5 px-3 py-2 rounded-xl tap hover:opacity-80"
+            className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl tap hover:opacity-80"
           >
-            <Avatar src={u.image?.url} name={u.username} size={32} />
+            <Avatar src={u.image?.url} name={u.username} size={30} />
             <div className="min-w-0">
               <p
-                className="text-sm font-bold truncate"
+                className="text-[13px] font-semibold truncate leading-tight"
                 style={{ color: "var(--text)" }}
               >
                 {u.name || u.username}
@@ -1761,7 +2073,6 @@ export const StoryRead: React.FC = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [likeAnim, setLikeAnim] = useState(false);
-
   const [likedByOpen, setLikedByOpen] = useState(false);
   const [likedByUsers, setLikedByUsers] = useState<LikedByUser[]>([]);
   const [likedByLoading, setLikedByLoading] = useState(false);
@@ -1796,6 +2107,7 @@ export const StoryRead: React.FC = () => {
     () => story?.comments.filter((c) => !c.parentId) || [],
     [story?.comments],
   );
+
   const repliesMap = useMemo(() => {
     const m: Record<string, Comment[]> = {};
     story?.comments.forEach((c) => {
@@ -1811,6 +2123,7 @@ export const StoryRead: React.FC = () => {
     );
     return m;
   }, [story?.comments]);
+
   const sorted = useMemo(() => {
     const l = [...mainComments];
     return sortBy === "top"
@@ -1825,6 +2138,7 @@ export const StoryRead: React.FC = () => {
     const s = localStorage.getItem("story_fs");
     if (s && ["sm", "base", "lg", "xl"].includes(s)) setFontSize(s as FontSize);
   }, []);
+
   useEffect(() => {
     localStorage.setItem("story_fs", fontSize);
   }, [fontSize]);
@@ -1834,7 +2148,6 @@ export const StoryRead: React.FC = () => {
     if (!bodyRef.current) return;
     const root = bodyRef.current;
 
-    // Clean old highlights
     const oldMarks = root.querySelectorAll("mark.tts-highlight");
     oldMarks.forEach((m) => {
       const parent = m.parentNode;
@@ -1848,20 +2161,23 @@ export const StoryRead: React.FC = () => {
     });
 
     if (activeSentenceIndex < 0 || !ttsSentences[activeSentenceIndex]) return;
-
     const sentenceText = ttsSentences[activeSentenceIndex].text.trim();
     if (!sentenceText) return;
 
-    // Search text nodes
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
     let node: Text | null;
-    const searchPrefix = sentenceText.slice(0, Math.min(sentenceText.length, 30));
-
+    const searchPrefix = sentenceText.slice(
+      0,
+      Math.min(sentenceText.length, 30),
+    );
     while ((node = walker.nextNode() as Text | null)) {
       const content = node.textContent || "";
       const idx = content.indexOf(searchPrefix);
       if (idx !== -1) {
-        const matchLength = Math.min(content.length - idx, sentenceText.length);
+        const matchLength = Math.min(
+          content.length - idx,
+          sentenceText.length,
+        );
         try {
           const range = document.createRange();
           range.setStart(node, idx);
@@ -1882,14 +2198,16 @@ export const StoryRead: React.FC = () => {
         setMoreOpen(false);
       if (likedByRef.current && !likedByRef.current.contains(e.target as Node))
         setLikedByOpen(false);
-      if (likePromptRef.current && !likePromptRef.current.contains(e.target as Node))
+      if (
+        likePromptRef.current &&
+        !likePromptRef.current.contains(e.target as Node)
+      )
         setShowLikeAuthPrompt(false);
     };
     document.addEventListener("mousedown", fn);
     return () => document.removeEventListener("mousedown", fn);
   }, []);
 
-  // Auto-dismiss like prompt after delay if not dismissed manually
   useEffect(() => {
     if (!showLikeAuthPrompt) return;
     const timer = setTimeout(() => setShowLikeAuthPrompt(false), 6000);
@@ -1967,6 +2285,7 @@ export const StoryRead: React.FC = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     if (id) fetchStory();
   }, [id]);
@@ -2021,7 +2340,7 @@ export const StoryRead: React.FC = () => {
       } catch { }
     } else {
       await navigator.clipboard.writeText(location.href);
-      toast.success("Link copied");
+      toast.success("Link copied to clipboard");
     }
   };
 
@@ -2029,17 +2348,17 @@ export const StoryRead: React.FC = () => {
     if (!story) return;
     try {
       await api.delete(`/stories/${story._id}`);
-      toast.success("Deleted");
+      toast.success("Story deleted");
       navigate("/stories");
     } catch {
-      toast.error("Failed");
+      toast.error("Failed to delete story");
     }
   };
 
   const handleDownload = async () => {
     if (!story || downloading) return;
     setDownloading(true);
-    const tid = toast.loading("Preparing…");
+    const tid = toast.loading("Preparing PDF…");
     try {
       try {
         const r = await api.get(`/stories/download/${story._id}`, {
@@ -2059,15 +2378,21 @@ export const StoryRead: React.FC = () => {
       } catch {
         const pw = window.open("", "_blank");
         if (!pw) {
-          toast.error("Allow popups", { id: tid });
+          toast.error("Please allow popups to print", { id: tid });
           return;
         }
-        pw.document
-          .write(`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${story.title}</title>
+        pw.document.write(
+          `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${story.title}</title>
           <style>body{font-family:system-ui;max-width:660px;margin:40px auto;padding:24px;line-height:1.85}h1{font-size:32px;margin:0 0 12px}img{max-width:100%;border-radius:12px;margin:16px 0}@media print{body{margin:20px}}</style>
-        </head><body><h1>${story.title}</h1>${story.image?.url ? `<img src="${story.image.url}"/>` : ""}<p style="color:#666;font-size:14px">By ${story.owner.name || story.owner.username} · ${moment(story.timeStamp).format("MMMM D, YYYY")}</p><div>${story.story.replace(/<script[\s\S]*?<\/script>/gi, "")}</div><script>window.onload=()=>setTimeout(()=>{window.print();window.onafterprint=()=>window.close()},600)<\/script></body></html>`);
+        </head><body><h1>${story.title}</h1>${story.image?.url ? `<img src="${story.image.url}"/>` : ""
+          }<p style="color:#666;font-size:14px">By ${story.owner.name || story.owner.username
+          } · ${moment(story.timeStamp).format("MMMM D, YYYY")}</p><div>${story.story.replace(
+            /<script[\s\S]*?<\/script>/gi,
+            "",
+          )}</div><script>window.onload=()=>setTimeout(()=>{window.print();window.onafterprint=()=>window.close()},600)<\/script></body></html>`,
+        );
         pw.document.close();
-        toast.success("Print opened", { id: tid });
+        toast.success("Print view opened", { id: tid });
       }
     } catch {
       toast.error("Failed", { id: tid });
@@ -2089,10 +2414,10 @@ export const StoryRead: React.FC = () => {
             ? { ...p, comments: [r.data.comment, ...p.comments] }
             : p,
         );
-        toast.success("Posted");
+        toast.success("Comment posted");
       }
     } catch {
-      toast.error("Failed");
+      toast.error("Failed to post comment");
     }
   };
 
@@ -2109,10 +2434,10 @@ export const StoryRead: React.FC = () => {
             ? { ...p, comments: [r.data.comment, ...p.comments] }
             : p,
         );
-        toast.success("Replied");
+        toast.success("Reply posted");
       }
     } catch {
-      toast.error("Failed");
+      toast.error("Failed to reply");
     }
   };
 
@@ -2130,10 +2455,10 @@ export const StoryRead: React.FC = () => {
             }
             : p,
         );
-        toast.success("Updated");
+        toast.success("Comment updated");
       }
     } catch {
-      toast.error("Failed");
+      toast.error("Failed to update comment");
     }
   };
 
@@ -2177,7 +2502,7 @@ export const StoryRead: React.FC = () => {
           }
           : p,
       );
-      toast.success("Deleted");
+      toast.success("Comment deleted");
     } catch {
       toast.error("Failed");
     }
@@ -2191,16 +2516,16 @@ export const StoryRead: React.FC = () => {
       return;
     }
     setTranslating(true);
-    const tid = toast.loading("Translating…");
+    const tid = toast.loading("Translating story…");
     try {
       const p = story.story
         .replace(/<[^>]*>/g, " ")
         .replace(/\s+/g, " ")
         .trim();
       setTranslatedText(await translateText(p, code));
-      toast.success("Done", { id: tid });
+      toast.success("Translated", { id: tid });
     } catch {
-      toast.error("Failed", { id: tid });
+      toast.error("Translation failed", { id: tid });
       setCurrentLang("en");
     } finally {
       setTranslating(false);
@@ -2209,67 +2534,75 @@ export const StoryRead: React.FC = () => {
 
   if (loading)
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center gap-3"
-        style={{ background: "var(--bg)" }}
-      >
+      <>
+        <style>{css}</style>
         <div
-          className="w-9 h-9 rounded-full border-2 animate-spin"
-          style={{
-            borderColor: "var(--border-hover)",
-            borderTopColor: "var(--text)",
-          }}
-        />
-        <p
-          className="text-sm font-medium"
-          style={{ color: "var(--text-soft)" }}
+          className="min-h-screen flex flex-col items-center justify-center gap-3"
+          style={{ background: "var(--bg)", fontFamily: "var(--font)" }}
         >
-          Loading…
-        </p>
-      </div>
+          <div
+            className="w-8 h-8 rounded-full border-2 animate-spin"
+            style={{
+              borderColor: "var(--border)",
+              borderTopColor: "var(--text)",
+            }}
+          />
+          <p
+            className="text-xs font-medium"
+            style={{ color: "var(--text-soft)" }}
+          >
+            Loading story…
+          </p>
+        </div>
+      </>
     );
 
   if (error) {
     const isNotFound =
       error.toLowerCase().includes("not found") ||
       error.toLowerCase().includes("not exist");
-
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-6"
-        style={{ background: "var(--bg)" }}
-      >
-        <div className="w-full max-w-md">
-          <ErrorCard
-            variant="centered"
-            title={isNotFound ? "Story not found" : "Failed to load story"}
-            message={error}
-            actionLabel="Try again"
-            onAction={fetchStory}
-            secondaryActionLabel="Back to stories"
-            onSecondaryAction={() => navigate("/stories")}
-          />
+      <>
+        <style>{css}</style>
+        <div
+          className="min-h-screen flex items-center justify-center p-6"
+          style={{ background: "var(--bg)", fontFamily: "var(--font)" }}
+        >
+          <div className="w-full max-w-md">
+            <ErrorCard
+              variant="centered"
+              title={isNotFound ? "Story not found" : "Failed to load story"}
+              message={error}
+              actionLabel="Try again"
+              onAction={fetchStory}
+              secondaryActionLabel="Back to stories"
+              onSecondaryAction={() => navigate("/stories")}
+            />
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   if (!story) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-6"
-        style={{ background: "var(--bg)" }}
-      >
-        <div className="w-full max-w-md">
-          <ErrorCard
-            variant="centered"
-            title="Story not found"
-            message="This story does not exist or may have been removed."
-            secondaryActionLabel="Back to stories"
-            onSecondaryAction={() => navigate("/stories")}
-          />
+      <>
+        <style>{css}</style>
+        <div
+          className="min-h-screen flex items-center justify-center p-6"
+          style={{ background: "var(--bg)", fontFamily: "var(--font)" }}
+        >
+          <div className="w-full max-w-md">
+            <ErrorCard
+              variant="centered"
+              title="Story not found"
+              message="This story does not exist or may have been removed."
+              secondaryActionLabel="Back to stories"
+              onSecondaryAction={() => navigate("/stories")}
+            />
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -2295,7 +2628,6 @@ export const StoryRead: React.FC = () => {
     <>
       <style>{css}</style>
       <Progress />
-
       <div
         className="min-h-screen"
         style={{ background: "var(--bg)", fontFamily: "var(--font)" }}
@@ -2313,50 +2645,59 @@ export const StoryRead: React.FC = () => {
           onChange={setFontSize}
         />
 
-        {/* Delete Modal */}
+        {/* Delete Story Confirmation Modal */}
         {deleteOpen && (
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4"
             onClick={() => setDeleteOpen(false)}
           >
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-xs" />
             <div
-              className="relative rounded-3xl p-6 max-w-sm w-full scale-in"
+              className="relative rounded-2xl p-6 max-w-sm w-full scale-in"
               style={{
                 background: "var(--card)",
+                border: "1px solid var(--border)",
                 boxShadow: "var(--shadow-xl)",
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4"
-                style={{ background: "#FEE2E2" }}
+                className="w-11 h-11 rounded-xl flex items-center justify-center mb-4"
+                style={{
+                  background: "rgba(229, 72, 77, 0.12)",
+                  color: "var(--accent-red)",
+                }}
               >
-                <i
-                  className="ri-delete-bin-6-line text-2xl"
-                  style={{ color: "var(--accent-red)" }}
-                />
+                <i className="ri-delete-bin-6-line text-xl" />
               </div>
               <h3
-                className="text-xl font-extrabold mb-1"
+                className="text-lg font-bold mb-1"
                 style={{ color: "var(--text)" }}
               >
-                Delete story?
+                Delete this story?
               </h3>
-              <p className="text-sm mb-6" style={{ color: "var(--text-soft)" }}>
-                This can't be undone.
+              <p
+                className="text-[13.5px] mb-5 leading-relaxed"
+                style={{ color: "var(--text-mid)" }}
+              >
+                This action is permanent and will remove the story and all of
+                its comments.
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setDeleteOpen(false)}
-                  className="flex-1 py-3 rounded-2xl font-bold text-sm tap"
-                  style={{ background: "var(--bg)", color: "var(--text)" }}
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-[13px] tap"
+                  style={{
+                    background: "var(--bg)",
+                    color: "var(--text)",
+                    border: "1px solid var(--border)",
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="flex-1 py-3 rounded-2xl font-bold text-sm text-white tap"
+                  className="flex-1 py-2.5 rounded-xl font-semibold text-[13px] text-white tap"
                   style={{ background: "var(--accent-red)" }}
                 >
                   Delete
@@ -2366,287 +2707,326 @@ export const StoryRead: React.FC = () => {
           </div>
         )}
 
-        {/* ── Content ── */}
-        <main className="max-w-[720px] mx-auto px-4 sm:px-6 pt-5 pb-24">
-          {/* Toolbar */}
-          {/* Floating Sticky Reader Navbar */}
-          <div className="sticky top-0 z-50 w-full pt-3 sm:pt-4 px-3 sm:px-5 pointer-events-none select-none mb-6 sm:mb-8">
-            <header
-              className="pointer-events-auto max-w-2xl mx-auto h-14 sm:h-[60px] rounded-full sm:rounded-[22px] flex items-center justify-between gap-2 sm:gap-3 px-2.5 sm:px-4 backdrop-blur-md transition-all duration-300 border"
-              style={{
-                backgroundColor: "var(--card)",
-                borderColor: "var(--border)",
-                boxShadow: "0 12px 40px -8px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.02)",
-              }}
-            >
-              {/* Left: Back Button & Story Meta */}
-              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        {/* ── Sticky Editorial Reader Topbar ── */}
+        <div className="sticky top-0 z-50 w-full pt-3 px-3 sm:px-6 pointer-events-none">
+          <header
+            className="pointer-events-auto max-w-[720px] mx-auto h-13 rounded-full flex items-center justify-between gap-2 px-2.5 sm:px-3.5 backdrop-blur-md transition-all"
+            style={{
+              background: "color-mix(in srgb, var(--card) 88%, transparent)",
+              border: "1px solid var(--border)",
+              boxShadow: "var(--shadow-md)",
+            }}
+          >
+            {/* Left: Back + Compact Story Title */}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <button
+                onClick={() => navigate(-1)}
+                className="w-9 h-9 rounded-full flex items-center justify-center tap flex-shrink-0"
+                style={{ color: "var(--text)" }}
+                aria-label="Go back"
+              >
+                <i className="ri-arrow-left-line text-lg" />
+              </button>
+
+              <div
+                className="h-4 w-[1px] flex-shrink-0"
+                style={{ background: "var(--border)" }}
+              />
+
+              <p
+                className="text-[13px] font-semibold truncate"
+                style={{ color: "var(--text)" }}
+              >
+                {story.title}
+              </p>
+            </div>
+
+            {/* Right: Reader Utilities */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {/* Typography Size */}
+              <button
+                onClick={() => setFontOpen(true)}
+                className="w-9 h-9 rounded-full flex items-center justify-center tap"
+                style={{ color: "var(--text-mid)" }}
+                aria-label="Reading typography"
+                title="Reading size"
+              >
+                <span className="font-serif font-bold text-[13px]">Aa</span>
+              </button>
+
+              {/* Translate */}
+              <button
+                onClick={() => setTranslateOpen(true)}
+                className="h-8 px-2.5 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 tap"
+                style={
+                  currentLang !== "en"
+                    ? {
+                      background: "var(--text)",
+                      color: "var(--card)",
+                    }
+                    : {
+                      background: "var(--bg)",
+                      color: "var(--text-mid)",
+                      border: "1px solid var(--border)",
+                    }
+                }
+                aria-label="Translate story"
+                title="Translate"
+              >
+                <span className="text-sm leading-none">
+                  {langInfo?.flag || <i className="ri-translate-2" />}
+                </span>
+                <span className="text-[11px] uppercase hidden sm:inline">
+                  {currentLang}
+                </span>
+              </button>
+
+              {/* Share Quick Button */}
+              <button
+                onClick={handleShare}
+                className="w-9 h-9 rounded-full hidden sm:flex items-center justify-center tap"
+                style={{ color: "var(--text-mid)" }}
+                title="Share story"
+              >
+                <i className="ri-share-forward-line text-base" />
+              </button>
+
+              {/* More Menu */}
+              <div className="relative" ref={moreRef}>
                 <button
-                  onClick={() => navigate(-1)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--border)]/40 text-[var(--text-mid)] hover:text-[var(--text-main)] active:scale-95 transition-all duration-200 shrink-0"
-                  aria-label="Go back"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMoreOpen(!moreOpen);
+                  }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center tap"
+                  style={{
+                    background: moreOpen ? "var(--bg)" : "transparent",
+                    color: "var(--text)",
+                  }}
+                  aria-label="More options"
                 >
-                  <i className="ri-arrow-left-line text-lg sm:text-xl" />
+                  <i className="ri-more-fill text-lg" />
                 </button>
 
-                {story?.title && (
-                  <>
-                    {/* Accent Divider Line */}
-                    <div className="w-[3px] h-7 rounded-full bg-gradient-to-b from-[#e8c9a0] via-[#c4956a] to-[#8b6a4a] shrink-0 opacity-90" />
-
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-extrabold text-[var(--text-main)] tracking-tight truncate leading-tight max-w-[120px] sm:max-w-[200px]">
-                        {story.title}
-                      </p>
-                      <p className="text-[10px] text-[var(--text-mid)]/80 font-bold tracking-wider mt-0.5 leading-none uppercase">
-                        Reader View
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Right: Actions */}
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                {/* Font Settings */}
-                <button
-                  onClick={() => setFontOpen(true)}
-                  className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-[var(--border)]/40 text-[var(--text-mid)] hover:text-[var(--text-main)] active:scale-95 transition-all duration-200"
-                  aria-label="Font settings"
-                  title="Adjust Font"
-                >
-                  <span className="font-serif font-bold text-xs sm:text-sm">Aa</span>
-                </button>
-
-                {/* Language / Translation Button */}
-                <button
-                  onClick={() => setTranslateOpen(true)}
-                  className="h-10 px-3 sm:px-3.5 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 border"
-                  style={
-                    currentLang !== "en"
-                      ? {
-                        background: "var(--card-dark)",
-                        color: "var(--card)",
-                        borderColor: "transparent",
-                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-                      }
-                      : {
-                        background: "transparent",
-                        color: "var(--text-mid)",
-                        borderColor: "var(--border)",
-                      }
-                  }
-                  aria-label="Translate Story"
-                  title="Translate"
-                >
-                  <span className="text-[15px] sm:text-[17px] leading-none">
-                    {langInfo?.flag || <i className="ri-translate-2 text-xs" />}
-                  </span>
-                </button>
-
-                {/* Dropdown Wrapper */}
-                <div className={`relative ${moreOpen ? "z-[60]" : "z-0"}`} ref={moreRef}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMoreOpen(!moreOpen);
+                {moreOpen && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 mt-2 z-50 w-48 rounded-2xl p-1.5 scale-in"
+                    style={{
+                      background: "var(--card)",
+                      border: "1px solid var(--border)",
+                      boxShadow: "var(--shadow-lg)",
                     }}
-                    className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-95 transition-all duration-200 ${moreOpen
-                      ? "bg-[var(--border)] text-[var(--text-main)]"
-                      : "text-[var(--text-mid)] hover:text-[var(--text-main)] hover:bg-[var(--border)]/40"
-                      }`}
-                    aria-label="More options"
-                    aria-expanded={moreOpen}
                   >
-                    <i className="ri-more-2-fill text-lg" />
-                  </button>
-
-                  {/* Dropdown Menu */}
-                  {moreOpen && (
-                    <>
-                      {/* Backdrop layer for tap-away dismissals */}
-                      <div
-                        className="fixed inset-0 z-10"
-                        aria-hidden
-                        onClick={() => setMoreOpen(false)}
+                    <button
+                      role="menuitem"
+                      onClick={handleDownload}
+                      disabled={downloading}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-left tap disabled:opacity-50"
+                      style={{ color: "var(--text)" }}
+                    >
+                      <i
+                        className={
+                          downloading
+                            ? "ri-loader-4-line animate-spin text-sm"
+                            : "ri-download-2-line text-sm"
+                        }
                       />
+                      <span>
+                        {downloading ? "Preparing PDF…" : "Download PDF"}
+                      </span>
+                    </button>
 
-                      <div
-                        role="menu"
-                        className="absolute right-0 mt-3 z-20 w-52 rounded-[20px] border p-1.5 shadow-[0_16px_40px_-8px_rgba(0,0,0,0.16)] animate-in fade-in zoom-in-95 duration-150"
-                        style={{
-                          backgroundColor: "var(--card)",
-                          borderColor: "var(--border)",
-                        }}
-                      >
-                        {/* Header Label inside Dropdown */}
-                        <div className="px-3.5 py-2 bg-[var(--border)]/20 rounded-[14px] mb-1">
-                          <p className="text-[10px] font-bold text-[var(--text-mid)] tracking-wider uppercase">
-                            Story Menu
-                          </p>
-                        </div>
+                    <button
+                      role="menuitem"
+                      onClick={() => {
+                        handleShare();
+                        setMoreOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-left tap"
+                      style={{ color: "var(--text)" }}
+                    >
+                      <i className="ri-share-line text-sm" />
+                      <span>Copy / Share link</span>
+                    </button>
 
-                        {/* Download */}
-                        <button
+                    {isOwner && (
+                      <>
+                        <div
+                          className="h-px my-1 mx-1.5"
+                          style={{ background: "var(--border)" }}
+                        />
+                        <Link
+                          to={`/write?edit=${story._id}`}
                           role="menuitem"
-                          onClick={handleDownload}
-                          disabled={downloading}
-                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[12px] text-[13px] font-bold text-[var(--text-mid)] hover:text-[var(--text-main)] hover:bg-[var(--border)]/40 transition-colors disabled:opacity-50"
+                          onClick={() => setMoreOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium tap"
+                          style={{ color: "var(--text)" }}
                         >
-                          {downloading ? (
-                            <i className="ri-loader-4-line animate-spin text-[15px] text-[#c4956a]" />
-                          ) : (
-                            <i className="ri-download-line text-[15px] text-[#c4956a]" />
-                          )}
-                          <span>{downloading ? "Downloading..." : "Download"}</span>
-                        </button>
-
-                        {/* Share */}
+                          <i className="ri-pencil-line text-sm" />
+                          <span>Edit story</span>
+                        </Link>
                         <button
                           role="menuitem"
                           onClick={() => {
-                            handleShare();
+                            setDeleteOpen(true);
                             setMoreOpen(false);
                           }}
-                          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[12px] text-[13px] font-bold text-[var(--text-mid)] hover:text-[var(--text-main)] hover:bg-[var(--border)]/40 transition-colors"
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[13px] font-medium text-left tap"
+                          style={{ color: "var(--accent-red)" }}
                         >
-                          <i className="ri-share-line text-[15px] text-[#c4956a]" />
-                          <span>Share</span>
+                          <i className="ri-delete-bin-6-line text-sm" />
+                          <span>Delete story</span>
                         </button>
-
-                        {/* Author Specific Options */}
-                        {isOwner && (
-                          <>
-                            <div className="h-px my-1.5 mx-2 bg-[var(--border)]" />
-
-                            {/* Edit */}
-                            <Link
-                              to={`/write?edit=${story?._id}`}
-                              role="menuitem"
-                              onClick={() => setMoreOpen(false)}
-                              className="flex items-center gap-3 px-3.5 py-2.5 rounded-[12px] text-[13px] font-bold text-[var(--text-mid)] hover:text-[var(--text-main)] hover:bg-[var(--border)]/40 transition-colors"
-                            >
-                              <i className="ri-edit-line text-[15px] text-[#c4956a]" />
-                              <span>Edit Story</span>
-                            </Link>
-
-                            {/* Delete */}
-                            <button
-                              role="menuitem"
-                              onClick={() => {
-                                setDeleteOpen(true);
-                                setMoreOpen(false);
-                              }}
-                              className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[12px] text-[13px] font-bold text-[var(--accent-red)] hover:bg-red-500/10 transition-colors"
-                            >
-                              <i className="ri-delete-bin-6-line text-[15px] text-[var(--accent-red)]" />
-                              <span>Delete Story</span>
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-            </header>
-          </div>
+            </div>
+          </header>
+        </div>
 
-          {/* Article */}
+        {/* ── Main Reader Container ── */}
+        <main className="max-w-[680px] mx-auto px-4 sm:px-6 pt-7 sm:pt-10 pb-24">
           <article className="fade-in">
-            {/* Meta row */}
-            <div className="flex items-center gap-2 mb-5 flex-wrap">
+            {/* Category & Reading Meta */}
+            <div className="flex items-center gap-2 mb-4 flex-wrap">
               {story.category && (
                 <span
-                  className="text-[10px] font-extrabold uppercase tracking-widest px-3 py-1.5 rounded-full"
-                  style={{ background: "var(--text)", color: "var(--card)" }}
+                  className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md"
+                  style={{
+                    background: "var(--card)",
+                    color: "var(--text)",
+                    border: "1px solid var(--border)",
+                  }}
                 >
                   {story.category}
                 </span>
               )}
               <span
-                className="text-xs font-semibold"
+                className="text-[12.5px] font-medium"
                 style={{ color: "var(--text-soft)" }}
               >
                 {moment(story.timeStamp).format("MMM D, YYYY")}
               </span>
               <span
-                className="w-1 h-1 rounded-full"
-                style={{ background: "var(--text-muted)" }}
-              />
+                className="text-[12px]"
+                style={{ color: "var(--text-soft)" }}
+              >
+                ·
+              </span>
               <span
-                className="text-xs font-semibold"
+                className="text-[12.5px] font-medium"
                 style={{ color: "var(--text-soft)" }}
               >
                 {readMin} min read
               </span>
             </div>
 
-            {/* Title */}
+            {/* Story Title */}
             <h1
-              className="mb-8 break-words"
+              className="mb-6 break-words"
               style={{
                 fontWeight: 800,
-                fontSize: "clamp(30px, 5.5vw, 46px)",
-                lineHeight: 1.1,
-                letterSpacing: "-0.03em",
+                fontSize: "clamp(28px, 5vw, 42px)",
+                lineHeight: 1.15,
+                letterSpacing: "-0.028em",
                 color: "var(--text)",
               }}
             >
               {story.title}
             </h1>
 
-            {/* Author card */}
-            <Link
-              to={`/profile/${story.owner._id}`}
-              className="card flex items-center gap-3 p-3 mb-8 hover:opacity-90 tap"
+            {/* Editorial Author Byline Bar */}
+            <div
+              className="flex items-center justify-between gap-3 py-3.5 mb-7"
+              style={{
+                borderTop: "1px solid var(--border)",
+                borderBottom: "1px solid var(--border)",
+              }}
             >
-              <Avatar
-                src={story.owner.image?.url}
-                name={story.owner.username}
-                size={40}
-              />
-              <div className="flex-1 min-w-0">
-                <p
-                  className="text-sm font-bold truncate"
-                  style={{ color: "var(--text)" }}
-                >
-                  {story.owner.name || story.owner.username}
-                </p>
-                <p
-                  className="text-xs truncate"
-                  style={{ color: "var(--text-soft)" }}
-                >
-                  @{story.owner.username}
-                </p>
-              </div>
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
-                style={{ background: "var(--bg)" }}
+              <Link
+                to={`/profile/${story.owner._id}`}
+                className="flex items-center gap-3 min-w-0 group"
               >
-                <i
-                  className="ri-arrow-right-up-line text-sm"
-                  style={{ color: "var(--text-mid)" }}
+                <Avatar
+                  src={story.owner.image?.url}
+                  name={story.owner.username}
+                  size={40}
                 />
-              </div>
-            </Link>
+                <div className="min-w-0">
+                  <p
+                    className="text-[14px] font-bold truncate group-hover:underline"
+                    style={{ color: "var(--text)" }}
+                  >
+                    {story.owner.name || story.owner.username}
+                  </p>
+                  <p
+                    className="text-[12px] truncate"
+                    style={{ color: "var(--text-soft)" }}
+                  >
+                    @{story.owner.username}
+                  </p>
+                </div>
+              </Link>
 
-            {/* Cover */}
+              {/* Quick Engagement Summary in Header */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={handleLike}
+                  className="h-8 px-3 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 tap"
+                  style={{
+                    background: isLiked
+                      ? "rgba(229, 72, 77, 0.1)"
+                      : "var(--card)",
+                    color: isLiked ? "var(--accent-red)" : "var(--text-mid)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <i
+                    className={`${isLiked ? "ri-heart-3-fill" : "ri-heart-3-line"
+                      } text-sm ${likeAnim ? "heart-pop" : ""}`}
+                  />
+                  <span className="tabular-nums">{likesCount}</span>
+                </button>
+
+                <button
+                  onClick={() =>
+                    commentsRef.current?.scrollIntoView({ behavior: "smooth" })
+                  }
+                  className="h-8 px-3 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 tap"
+                  style={{
+                    background: "var(--card)",
+                    color: "var(--text-mid)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <i className="ri-chat-1-line text-sm" />
+                  <span className="tabular-nums">{total}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Cover Image */}
             {story.image?.url && (
-              <div
-                className="mb-8 rounded-3xl overflow-hidden"
-                style={{ aspectRatio: "16/9", background: "var(--border)" }}
+              <figure
+                className="mb-7 rounded-2xl overflow-hidden"
+                style={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                }}
               >
                 <img
                   src={story.image.url}
                   alt={story.title}
-                  className="w-full h-full object-cover"
+                  className="w-full max-h-[460px] object-cover block"
                   loading="lazy"
                 />
-              </div>
+              </figure>
             )}
 
-            {/* Audio Player */}
+            {/* Neural Audio Player */}
             <div className="mb-8">
               <StoryAudioPlayer
                 text={audioText}
@@ -2657,30 +3037,32 @@ export const StoryRead: React.FC = () => {
               />
             </div>
 
-            {/* Translation notice */}
+            {/* Translation Status Banner */}
             {translating && (
               <div
-                className="card mb-6 flex items-center gap-2.5 px-4 py-3 text-sm font-semibold"
+                className="card mb-6 flex items-center gap-2.5 px-4 py-3 text-xs font-semibold"
                 style={{ color: "var(--text-mid)" }}
               >
-                <i className="ri-loader-4-line animate-spin" /> Translating…
+                <i className="ri-loader-4-line animate-spin text-sm" />
+                <span>Translating story…</span>
               </div>
             )}
+
             {translatedText && !translating && (
-              <div className="card mb-6 flex items-center justify-between px-4 py-3">
+              <div className="card mb-6 flex items-center justify-between px-4 py-2.5">
                 <span
-                  className="flex items-center gap-2 text-xs font-bold"
+                  className="flex items-center gap-2 text-xs font-semibold"
                   style={{ color: "var(--text)" }}
                 >
-                  <span className="text-base">{langInfo?.flag}</span>{" "}
-                  {langInfo?.name}
+                  <span className="text-base">{langInfo?.flag}</span>
+                  <span>Translated to {langInfo?.name}</span>
                 </span>
                 <button
                   onClick={() => {
                     setTranslatedText(null);
                     setCurrentLang("en");
                   }}
-                  className="text-xs font-bold tap"
+                  className="text-xs font-semibold underline tap"
                   style={{ color: "var(--text-mid)" }}
                 >
                   Show original
@@ -2688,7 +3070,7 @@ export const StoryRead: React.FC = () => {
               </div>
             )}
 
-            {/* Body */}
+            {/* Story Body */}
             <div ref={bodyRef} className={`body-content ${fsClass}`}>
               {translatedText ? (
                 <div>
@@ -2704,46 +3086,63 @@ export const StoryRead: React.FC = () => {
               )}
             </div>
 
-            {/* Divider */}
-            <div className="my-10 flex justify-center">
-              <div className="flex gap-1.5">
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: "var(--border-hover)" }}
-                />
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: "var(--border-hover)" }}
-                />
-                <span
-                  className="w-1.5 h-1.5 rounded-full"
-                  style={{ background: "var(--border-hover)" }}
-                />
-              </div>
-            </div>
-
-            {/* Actions Card */}
-            <div className="card p-2 flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-1">
-                <div className="relative inline-flex items-center" ref={likePromptRef}>
+            {/* End-of-Story Engagement Bar */}
+            <div
+              className="mt-12 pt-6 flex items-center justify-between flex-wrap gap-3"
+              style={{ borderTop: "1px solid var(--border)" }}
+            >
+              {/* Left: Unified Like + LikedBy Control */}
+              <div className="flex items-center gap-2">
+                <div
+                  className="relative inline-flex items-center rounded-full"
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                  }}
+                  ref={likePromptRef}
+                >
                   <button
                     onClick={handleLike}
-                    className="flex items-center gap-2 h-10 px-4 rounded-full text-sm font-bold tap transition-all"
+                    className="flex items-center gap-2 h-10 px-4 rounded-full text-[13px] font-semibold tap transition-colors"
                     style={{
-                      background: isLiked ? "#FEE2E2" : "transparent",
                       color: isLiked ? "var(--accent-red)" : "var(--text)",
                     }}
                   >
                     <i
-                      className={`${isLiked ? "ri-heart-3-fill" : "ri-heart-3-line"} text-base ${likeAnim ? "heart-pop" : ""}`}
+                      className={`${isLiked ? "ri-heart-3-fill" : "ri-heart-3-line"
+                        } text-base ${likeAnim ? "heart-pop" : ""}`}
                     />
-                    {likesCount}
+                    <span className="tabular-nums">{likesCount}</span>
                   </button>
 
-                  {/* Inline Unauthenticated Like Prompt */}
+                  {likesCount > 0 && (
+                    <div className="relative" ref={likedByRef}>
+                      <button
+                        onClick={openLikedBy}
+                        className="h-10 pr-3.5 pl-2 text-[12px] font-medium tap flex items-center gap-1"
+                        style={{
+                          color: "var(--text-soft)",
+                          borderLeft: "1px solid var(--border)",
+                        }}
+                        title="See who liked this story"
+                      >
+                        <span>Likes</span>
+                        <i className="ri-arrow-up-s-line text-xs" />
+                      </button>
+                      {likedByOpen && (
+                        <LikedByPopover
+                          users={likedByUsers}
+                          loading={likedByLoading}
+                          onClose={() => setLikedByOpen(false)}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Unauthenticated Like Prompt Tooltip */}
                   {showLikeAuthPrompt && (
                     <div
-                      className="absolute left-0 bottom-full mb-2.5 z-40 scale-in flex items-center gap-2.5 px-3.5 py-1.5 rounded-2xl border shadow-lg max-w-[calc(100vw-2rem)] whitespace-nowrap"
+                      className="absolute left-0 bottom-full mb-2.5 z-40 scale-in flex items-center gap-2.5 px-3.5 py-2 rounded-xl border whitespace-nowrap"
                       style={{
                         background: "var(--card)",
                         borderColor: "var(--border)",
@@ -2752,99 +3151,102 @@ export const StoryRead: React.FC = () => {
                       role="tooltip"
                     >
                       <span
-                        className="text-xs font-semibold select-none"
+                        className="text-xs font-medium select-none"
                         style={{ color: "var(--text)" }}
                       >
-                        Sign in to show some love ❤️
+                        Sign in to like this story
                       </span>
                       <Link
                         to="/login"
                         state={{ from: `/stories/${story._id}` }}
-                        className="px-2.5 py-1 rounded-full text-xs font-bold tap transition-all hover:opacity-90"
+                        className="px-2.5 py-1 rounded-lg text-xs font-semibold tap"
                         style={{
-                          background: "var(--card-dark)",
+                          background: "var(--text)",
                           color: "var(--card)",
                         }}
                       >
                         Log in
                       </Link>
-                      {/* Downward Caret Indicator */}
-                      <span
-                        className="absolute -bottom-1.5 left-5 w-3 h-3 rotate-45 border-r border-b pointer-events-none"
-                        style={{
-                          background: "var(--card)",
-                          borderColor: "var(--border)",
-                        }}
-                      />
                     </div>
                   )}
                 </div>
-                <div className="relative" ref={likedByRef}>
-                  <button
-                    onClick={openLikedBy}
-                    className="h-10 px-3 rounded-full text-xs font-semibold tap"
-                    style={{ color: "var(--text-soft)" }}
-                  >
-                    Who?
-                  </button>
-                  {likedByOpen && (
-                    <LikedByPopover
-                      users={likedByUsers}
-                      loading={likedByLoading}
-                      onClose={() => setLikedByOpen(false)}
-                    />
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
+
+                {/* Comment Count Button */}
                 <button
                   onClick={() =>
                     commentsRef.current?.scrollIntoView({ behavior: "smooth" })
                   }
-                  className="flex items-center gap-2 h-10 px-4 rounded-full text-sm font-bold tap"
-                  style={{ color: "var(--text)" }}
+                  className="pill-btn h-10 px-4"
                 >
-                  <i className="ri-chat-3-line text-base" />
-                  {total}
+                  <i className="ri-chat-1-line text-base" />
+                  <span className="tabular-nums">{total}</span>
+                </button>
+              </div>
+
+              {/* Right: Share & Download */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDownload}
+                  disabled={downloading}
+                  className="pill-btn h-10 px-3.5"
+                  title="Download PDF"
+                >
+                  <i
+                    className={
+                      downloading
+                        ? "ri-loader-4-line animate-spin text-sm"
+                        : "ri-download-2-line text-sm"
+                    }
+                  />
+                  <span className="hidden sm:inline">PDF</span>
                 </button>
                 <button
                   onClick={handleShare}
-                  className="w-10 h-10 rounded-full flex items-center justify-center tap"
-                  style={{ background: "var(--text)", color: "var(--card)" }}
+                  className="pill-btn pill-btn-dark h-10 px-4"
                 >
-                  <i className="ri-share-line text-sm" />
+                  <i className="ri-share-forward-line text-sm" />
+                  <span>Share</span>
                 </button>
               </div>
             </div>
           </article>
 
           {/* ── Comments Section ── */}
-          <section ref={commentsRef} className="mt-16 scroll-mt-8">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-              <div className="flex items-baseline gap-2">
+          <section ref={commentsRef} className="mt-12 pt-8 scroll-mt-16" style={{ borderTop: "1px solid var(--border)" }}>
+            {/* Section Header + Sort Switcher */}
+            <div className="flex items-center justify-between mb-6 gap-3">
+              <div className="flex items-center gap-2">
                 <h2
-                  className="text-2xl font-extrabold"
-                  style={{ color: "var(--text)", letterSpacing: "-0.02em" }}
+                  className="text-lg font-bold tracking-tight"
+                  style={{ color: "var(--text)" }}
                 >
-                  Comments
+                  Responses
                 </h2>
-                {total > 0 && (
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: "var(--text-soft)" }}
-                  >
-                    ({total})
-                  </span>
-                )}
+                <span
+                  className="px-2 py-0.5 rounded-full text-xs font-semibold tabular-nums"
+                  style={{
+                    background: "var(--card)",
+                    color: "var(--text-mid)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  {total}
+                </span>
               </div>
+
               {mainComments.length > 1 && (
-                <div className="card flex items-center p-1">
+                <div
+                  className="flex items-center p-0.5 rounded-xl"
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
                   {(["new", "top"] as const).map((s) => (
                     <button
                       key={s}
                       onClick={() => setSortBy(s)}
-                      className="px-3.5 py-1.5 rounded-full text-xs font-bold tap capitalize transition-all"
+                      className="px-3 py-1 rounded-lg text-xs font-semibold tap transition-all"
                       style={{
                         background:
                           sortBy === s ? "var(--text)" : "transparent",
@@ -2858,75 +3260,60 @@ export const StoryRead: React.FC = () => {
               )}
             </div>
 
-            {/* Composer */}
-            <div className="mb-8">
+            {/* Top-Level Comment Composer */}
+            <div className="mb-6">
               <CommentBox
                 onSubmit={handleComment}
-                placeholder="Share your thoughts…"
+                placeholder="Write a response…"
               />
             </div>
 
-            {/* List */}
-            <div className="space-y-5">
+            {/* Thread List */}
+            <div>
               {sorted.length === 0 ? (
-                <div className="card p-12 text-center">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                    style={{ background: "var(--bg)" }}
-                  >
-                    <i
-                      className="ri-chat-3-line text-2xl"
-                      style={{ color: "var(--text-soft)" }}
-                    />
-                  </div>
+                <div
+                  className="rounded-2xl py-12 px-4 text-center"
+                  style={{
+                    background: "var(--card)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <i
+                    className="ri-chat-1-line text-2xl block mb-2"
+                    style={{ color: "var(--text-soft)" }}
+                  />
                   <p
-                    className="text-base font-bold mb-1"
+                    className="text-sm font-semibold"
                     style={{ color: "var(--text)" }}
                   >
-                    No comments yet
+                    No responses yet
                   </p>
-                  <p className="text-sm" style={{ color: "var(--text-soft)" }}>
-                    Be the first to comment
+                  <p
+                    className="text-xs mt-0.5"
+                    style={{ color: "var(--text-soft)" }}
+                  >
+                    Start the conversation by sharing your thoughts above.
                   </p>
                 </div>
               ) : (
-                sorted.map((c, i) => (
-                  <div
+                sorted.map((c) => (
+                  <Comment
                     key={c._id}
-                    className="fade-in"
-                    style={{ animationDelay: `${Math.min(i * 40, 240)}ms` }}
-                  >
-                    <Comment
-                      c={c}
-                      replies={repliesMap[c._id] || []}
-                      storyOwnerId={story.owner._id}
-                      currentUserId={user?._id}
-                      isStoryOwner={isOwner}
-                      onDelete={handleDeleteComment}
-                      onLike={handleLikeComment}
-                      onEdit={handleEditComment}
-                      onReply={handleReply}
-                      replyTo={replyTo}
-                      setReplyTo={setReplyTo}
-                    />
-                  </div>
+                    c={c}
+                    replies={repliesMap[c._id] || []}
+                    storyOwnerId={story.owner._id}
+                    currentUserId={user?._id}
+                    isStoryOwner={isOwner}
+                    onDelete={handleDeleteComment}
+                    onLike={handleLikeComment}
+                    onEdit={handleEditComment}
+                    onReply={handleReply}
+                    replyTo={replyTo}
+                    setReplyTo={setReplyTo}
+                  />
                 ))
               )}
             </div>
-
-            {total >= 5 && (
-              <div
-                className="mt-10 pt-6 text-center"
-                style={{ borderTop: "1px solid var(--border)" }}
-              >
-                <p
-                  className="text-xs font-semibold"
-                  style={{ color: "var(--text-soft)" }}
-                >
-                  End of conversation
-                </p>
-              </div>
-            )}
           </section>
         </main>
       </div>
